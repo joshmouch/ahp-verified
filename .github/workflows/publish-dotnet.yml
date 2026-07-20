@@ -4,6 +4,9 @@ name: Publish .NET (NuGet)
 on:
   push: { tags: ['dotnet/v[0-9]+.[0-9]+.[0-9]+'] }
 permissions: { contents: read }
+env:
+  HAVE_KEY: ${{ secrets.NUGET_API_KEY != '' }}
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -15,4 +18,5 @@ jobs:
       - run: dotnet build cs/src/Ahp.Core.Verified/Ahp.Core.Verified.csproj -c Release -warnaserror
       - run: dotnet run --project cs/test/Ahp.Core.Verified.SmokeTest -c Release
       - run: dotnet pack cs/src/Ahp.Core.Verified/Ahp.Core.Verified.csproj -c Release -o out
-      - run: dotnet nuget push "out/*.nupkg" --api-key "${{ secrets.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+      - name: publish (skipped when the registry secret is unset)
+        run: dotnet nuget push "out/*.nupkg" --api-key "${{ secrets.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
