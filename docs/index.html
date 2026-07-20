@@ -829,9 +829,8 @@ footer{border-top:1px solid var(--line); padding:52px 0 66px; color:var(--fg-dim
           </tr>
           <tr>
             <td class="lang">C++</td>
-            <td><span class="pill no">not extractable</span></td>
-            <td>A capability problem, not a packaging one. The experimental backend lacks BigInteger, most higher-order functions, and <code>Std.JSON</code> — all used pervasively here (66 <code>int</code> and 47 <code>nat</code> protocol fields; 37 arrow signatures in the reducer core).
-              <small>Bounding every integer to 64 bits to satisfy it would break the fold proofs that unbounded arithmetic underpins — forfeiting the entire point.</small></td>
+            <td><span class="pill proven">shipping via C ABI</span></td>
+            <td><code>dafny translate cpp</code> cannot express this core — no unbounded <code>int</code>/<code>nat</code>, no higher-order functions, no <code>Std.JSON</code>, all used pervasively (60 <code>int</code> + 47 <code>nat</code> fields, 26 arrow signatures). Re-confirmed on Dafny nightly 4.11.1. So C++ links a native library built <em>from</em> the verified core instead — recommended route is the <strong>Rust</strong> backend (<code>dafny translate rs</code>, already in 4.11.0, which handles both blockers). <small>A C++ binary runs the core’s own conformance corpus: 148/148 green, all 8 channels. The reducers are machine-derived from the proofs; the FFI binding around them is hand-written and is not verified.</small></td>
             <td>None</td>
           </tr>
         </tbody>
