@@ -20,3 +20,8 @@ cpp-via-*/lib/*.a
 cpp-via-*/lib/*.dylib
 cpp-via-*/**/target/
 cpp-via-*/toolchain/
+
+# audit + fix scratch (evidence kept locally, not shipped)
+_work/
+_work2/
+_work3/

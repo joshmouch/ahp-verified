@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    C# host-mapper harness (agent-host-protocol-core-dafny).
+    Compiles this project's own AhpHostMapper.cs alongside the file
+    dafny translate cs emits (../build/ahp_client_cs.cs; regenerate it with the
+    command recorded in gen/CS-HARNESS-PATTERN.md before building/running).
+
+    StartupObject is required: the generated file also defines a top-level
+    CallToMain.Main class (the auto-run entry point dafny run/dafny translate
+    wires up for the multi-channel corpus demo). Naming Mapper.Program here
+    means that class is compiled in (so its types are fully available to this
+    harness) but never executed, no text-patching of the generated file needed.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <StartupObject>Mapper.Program</StartupObject>
+    <NoWarn>CS8600;CS8603;CS8604;CS8605;CS8625;CS8629;CS8714;CS8765;CS8769;CS8981</NoWarn>
+    <RollForward>Major</RollForward>
+    <ConsumerSource Condition="'$(ConsumerSource)' == ''">../build/ahp_client_cs.cs</ConsumerSource>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="AhpHostMapper.cs" />
+    <Compile Include="$(ConsumerSource)" />
+  </ItemGroup>
+  <Import Project="../.conflux/runtime/dependencies/conflux-runtime/current/conflux-runtime.props" />
+  <!--
+    No PackageReference needed on net10.0: BigInteger (System.Numerics) and
+    ImmutableDictionary (System.Collections.Immutable), which the Dafny runtime
+    uses internally, both now ship in the shared framework. The older
+    spec/client_main.csproj (net8.0, dafny-run-generated) still carries explicit
+    System.Runtime.Numerics/System.Collections.Immutable PackageReferences;
+    dropping them here produced a clean `dotnet run` with zero NU1510 warnings.
+  -->
+
+
+
+</Project>

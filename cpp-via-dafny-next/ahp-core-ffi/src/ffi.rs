@@ -7,7 +7,7 @@
 //     call into that generated code.
 //   * THIS FILE IS HAND-WRITTEN BINDING GLUE and is NOT verified. Its job is
 //     marshalling: C string <-> Dafny Sequence<DafnyChar>, C int64 <-> DafnyInt,
-//     and owning/releasing Rc handles across the boundary.
+//     and owning/releasing state handles across the boundary.
 //
 // MEMORY CONTRACT
 //   * Every `ahp_terminal_*` constructor/transition returns an owned handle the
@@ -17,29 +17,133 @@
 //   * Transitions never mutate their input handle: the reducer is pure, so the
 //     input state remains valid and independently owned after the call.
 //
+// HANDLES ARE IDS, NOT POINTERS
+//   `AhpTerminalState*` is an opaque token, not a dereferenceable address. Each
+//   handle is a monotonically increasing id that indexes a private registry;
+//   ids are NEVER reused. A stale handle (use-after-free, double-free) therefore
+//   never resolves to a different live state: it is refused. Readouts return
+//   NULL and `ahp_terminal_free` is a no-op. Callers must not dereference a
+//   handle, and must not synthesize one.
+//
+// THREAD SAFETY
+//   Every entry point below is safe to call concurrently from any thread. The
+//   Dafny-extracted core is NOT itself thread-safe -- `dafny translate rs`
+//   without `--rust-sync` emits `std::rc::Rc` (a NON-ATOMIC refcount), and
+//   `dafny_runtime::Sequence` mutates itself through an `UnsafeCell` when it
+//   lazily flattens a concatenation, so even two concurrent READS of one state
+//   are a data race. Derived states structurally share subterms with their
+//   parents, so the race is reachable from ordinary use of this C ABI.
+//
+//   Because this crate consumes ALREADY-EXTRACTED Rust, it cannot switch the
+//   core to `Arc`; that requires regenerating with `--rust-sync`. Instead this
+//   layer takes a process-wide lock around every entry point, so all core
+//   values are touched under mutual exclusion, in one total order, with
+//   happens-before edges supplied by the mutex. No refcount and no sequence
+//   cell is ever touched concurrently.
+//
+//   The cost is honest and stated in the header: calls into the core are
+//   SERIALIZED. This is a correctness-over-throughput choice. The reducers are
+//   pure and short; the lock is held only for the duration of one call.
+//
+// UTF-8 CONTRACT (shared by all three bindings in this repository)
+//   Input strings MUST be well-formed UTF-8. Invalid input is REFUSED, never
+//   repaired: a function returning a pointer returns NULL. Substituting
+//   U+FFFD for invalid bytes would silently merge distinct inputs -- two
+//   different identifiers becoming one verified state -- so the binding refuses
+//   rather than corrupt the values the proofs reason about.
+//
 // Copyright (c) Microsoft Corporation
 // Copyright (c) 2026 Josh Mouch
 // SPDX-License-Identifier: MIT
 
 #![allow(non_snake_case)]
 
-use ::dafny_runtime::{DafnyInt, Sequence, DafnyChar};
+use ::dafny_runtime::{DafnyChar, DafnyInt, Sequence};
+use ::std::collections::HashMap;
 use ::std::ffi::{CStr, CString};
 use ::std::os::raw::c_char;
 use ::std::rc::Rc;
+use ::std::sync::{LazyLock, Mutex, MutexGuard};
 
 use crate::AhpSkeleton::Option as AhpOption;
 use crate::Terminal::{TerminalAction, TerminalState};
 
-/// Opaque handle. `TerminalState` is an `Rc`-managed Dafny datatype; the C side
-/// only ever sees a pointer.
-pub struct AhpTerminalState {
-    inner: Rc<TerminalState>,
+/// Opaque handle type. Never instantiated: a `*mut AhpTerminalState` carries a
+/// registry id in its address bits and must never be dereferenced by anyone.
+pub enum AhpTerminalState {}
+
+/// Largest `count` accepted by `ahp_terminal_fold_data`.
+///
+/// The length of a C array cannot be checked against the array itself, so a
+/// bogus count (classically a `size_t` underflow from `v.size() - 1` on an
+/// empty vector) is indistinguishable from a real one. What this bound CAN do
+/// is refuse counts that cannot be a real array, before any allocation sized
+/// from that count happens. Beyond this bound the call is refused with NULL.
+const MAX_FOLD_ITEMS: usize = 1 << 20;
+
+// ------------------------------------------------------------------ registry
+
+/// The live states, keyed by handle id. Ids start at 1 (0 is reserved for the
+/// NULL handle) and are never reused, so a stale id can never alias a live one.
+struct Registry {
+    states: HashMap<u64, Rc<TerminalState>>,
+    next: u64,
+}
+
+/// SAFETY: `Rc<TerminalState>` is `!Send` because its refcount is non-atomic.
+/// This wrapper is only ever reachable through `REGISTRY`, a `Mutex`, and every
+/// entry point in this file takes that mutex for the whole duration of its work
+/// -- including every clone, drop, read and construction of a core value. All
+/// accesses are therefore mutually exclusive and totally ordered, with the
+/// happens-before edges the `Rc` refcount needs supplied by the mutex's
+/// acquire/release. No core value is ever touched by two threads at once, which
+/// is the property `Send` would otherwise be asserting. Nothing hands an `Rc`
+/// out past the guard: handles crossing the C boundary are integer ids.
+unsafe impl Send for Registry {}
+
+static REGISTRY: LazyLock<Mutex<Registry>> = LazyLock::new(|| {
+    Mutex::new(Registry {
+        states: HashMap::new(),
+        next: 1,
+    })
+});
+
+/// Enter the core. Held for the whole of every entry point; see THREAD SAFETY.
+///
+/// The crate is built with `panic = "abort"`, so the mutex can never be
+/// poisoned; `into_inner()` on the error path is defensive only.
+fn enter() -> MutexGuard<'static, Registry> {
+    match REGISTRY.lock() {
+        Ok(g) => g,
+        Err(poisoned) => poisoned.into_inner(),
+    }
+}
+
+impl Registry {
+    /// Registers a state and returns its handle.
+    fn insert(&mut self, state: Rc<TerminalState>) -> *mut AhpTerminalState {
+        let id = self.next;
+        self.next += 1;
+        self.states.insert(id, state);
+        id as *mut AhpTerminalState
+    }
+
+    /// Resolves a handle, or None when it is NULL, never issued, or released.
+    fn get(&self, h: *const AhpTerminalState) -> Option<&Rc<TerminalState>> {
+        self.states.get(&(h as u64))
+    }
+
+    /// Releases a handle. Returns false when it was not live, which makes
+    /// double-free a no-op rather than a corruption.
+    fn remove(&mut self, h: *mut AhpTerminalState) -> bool {
+        self.states.remove(&(h as u64)).is_some()
+    }
 }
 
 // ---------------------------------------------------------------- marshalling
 
 /// Borrow a C string as a Dafny string. Returns None on NULL or invalid UTF-8.
+/// Invalid UTF-8 is REFUSED, not repaired -- see the UTF-8 CONTRACT above.
 unsafe fn to_dafny_str(p: *const c_char) -> Option<Sequence<DafnyChar>> {
     if p.is_null() {
         return None;
@@ -57,23 +161,30 @@ fn from_dafny_str(s: &Sequence<DafnyChar>) -> *mut c_char {
     }
 }
 
-fn handle(inner: Rc<TerminalState>) -> *mut AhpTerminalState {
-    Box::into_raw(Box::new(AhpTerminalState { inner }))
-}
-
-unsafe fn borrow<'a>(h: *const AhpTerminalState) -> Option<&'a Rc<TerminalState>> {
-    if h.is_null() { None } else { Some(&(*h).inner) }
-}
-
-/// Apply one action through the VERIFIED reducer.
-unsafe fn apply(
+/// Apply one action through the VERIFIED reducer, under the registry lock.
+fn apply(
+    reg: &mut Registry,
     h: *const AhpTerminalState,
     action: Rc<TerminalAction>,
 ) -> *mut AhpTerminalState {
-    match borrow(h) {
-        None => ::std::ptr::null_mut(),
+    let next = match reg.get(h) {
+        None => return ::std::ptr::null_mut(),
         // vvv the verified reducer vvv
-        Some(state) => handle(crate::Terminal::_default::apply1(state, &action)),
+        Some(state) => crate::Terminal::_default::apply1(state, &action),
+    };
+    reg.insert(next)
+}
+
+/// Apply an action whose only argument is a string, refusing NULL/non-UTF-8.
+unsafe fn apply_str(
+    h: *const AhpTerminalState,
+    text: *const c_char,
+    build: fn(Sequence<DafnyChar>) -> TerminalAction,
+) -> *mut AhpTerminalState {
+    let mut reg = enter();
+    match to_dafny_str(text) {
+        None => ::std::ptr::null_mut(),
+        Some(text) => apply(&mut reg, h, Rc::new(build(text))),
     }
 }
 
@@ -82,16 +193,34 @@ unsafe fn apply(
 /// Initial terminal state (Dafny `Terminal.T0()`).
 #[no_mangle]
 pub extern "C" fn ahp_terminal_initial() -> *mut AhpTerminalState {
-    handle(crate::Terminal::_default::T0())
+    let mut reg = enter();
+    let state = crate::Terminal::_default::T0();
+    reg.insert(state)
 }
 
+/// Releases a handle. Releasing a handle that was never issued, or that was
+/// already released, is a no-op: handle ids are never reused, so a stale id
+/// cannot name a live state.
 #[no_mangle]
-pub unsafe extern "C" fn ahp_terminal_free(h: *mut AhpTerminalState) {
-    if !h.is_null() {
-        drop(Box::from_raw(h));
+pub extern "C" fn ahp_terminal_free(h: *mut AhpTerminalState) {
+    let mut reg = enter();
+    reg.remove(h);
+}
+
+/// 1 when the handle names a live state, 0 otherwise. Lets a C caller check a
+/// handle instead of guessing -- there is no other way to tell from C.
+#[no_mangle]
+pub extern "C" fn ahp_terminal_valid(h: *const AhpTerminalState) -> i32 {
+    let reg = enter();
+    if reg.get(h).is_some() {
+        1
+    } else {
+        0
     }
 }
 
+/// Releases a string returned by this library. Strings are plain owned
+/// allocations that hold no core value, so this needs no lock.
 #[no_mangle]
 pub unsafe extern "C" fn ahp_string_free(p: *mut c_char) {
     if !p.is_null() {
@@ -107,10 +236,7 @@ pub unsafe extern "C" fn ahp_terminal_cwd_changed(
     h: *const AhpTerminalState,
     cwd: *const c_char,
 ) -> *mut AhpTerminalState {
-    match to_dafny_str(cwd) {
-        None => ::std::ptr::null_mut(),
-        Some(cwd) => apply(h, Rc::new(TerminalAction::TCwdChanged { cwd })),
-    }
+    apply_str(h, cwd, |cwd| TerminalAction::TCwdChanged { cwd })
 }
 
 #[no_mangle]
@@ -118,19 +244,18 @@ pub unsafe extern "C" fn ahp_terminal_title_changed(
     h: *const AhpTerminalState,
     title: *const c_char,
 ) -> *mut AhpTerminalState {
-    match to_dafny_str(title) {
-        None => ::std::ptr::null_mut(),
-        Some(title) => apply(h, Rc::new(TerminalAction::TTitleChanged { title })),
-    }
+    apply_str(h, title, |title| TerminalAction::TTitleChanged { title })
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn ahp_terminal_resized(
+pub extern "C" fn ahp_terminal_resized(
     h: *const AhpTerminalState,
     cols: i64,
     rows: i64,
 ) -> *mut AhpTerminalState {
+    let mut reg = enter();
     apply(
+        &mut reg,
         h,
         Rc::new(TerminalAction::TResized {
             cols: DafnyInt::from(cols),
@@ -140,11 +265,18 @@ pub unsafe extern "C" fn ahp_terminal_resized(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn ahp_terminal_exited(
+pub extern "C" fn ahp_terminal_exited(
     h: *const AhpTerminalState,
     code: i64,
 ) -> *mut AhpTerminalState {
-    apply(h, Rc::new(TerminalAction::TExited { code: DafnyInt::from(code) }))
+    let mut reg = enter();
+    apply(
+        &mut reg,
+        h,
+        Rc::new(TerminalAction::TExited {
+            code: DafnyInt::from(code),
+        }),
+    )
 }
 
 #[no_mangle]
@@ -152,36 +284,40 @@ pub unsafe extern "C" fn ahp_terminal_data(
     h: *const AhpTerminalState,
     data: *const c_char,
 ) -> *mut AhpTerminalState {
-    match to_dafny_str(data) {
-        None => ::std::ptr::null_mut(),
-        Some(data) => apply(h, Rc::new(TerminalAction::TData { data })),
-    }
+    apply_str(h, data, |data| TerminalAction::TData { data })
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn ahp_terminal_cleared(
-    h: *const AhpTerminalState,
-) -> *mut AhpTerminalState {
-    apply(h, Rc::new(TerminalAction::TCleared {}))
+pub extern "C" fn ahp_terminal_cleared(h: *const AhpTerminalState) -> *mut AhpTerminalState {
+    let mut reg = enter();
+    apply(&mut reg, h, Rc::new(TerminalAction::TCleared {}))
 }
 
 /// Fold a batch of `data` actions through the core's proven kernel fold
 /// (`Terminal.fold`), rather than looping `apply1` on the C++ side. Proves the
 /// higher-order path -- the thing the C++ backend could not express -- works.
+///
+/// Refuses (NULL) a NULL handle, a NULL `items` with a non-zero `count`, a
+/// `count` above `MAX_FOLD_ITEMS`, or any element that is NULL or not UTF-8.
+/// The bound is checked BEFORE any allocation is sized from `count`.
 #[no_mangle]
 pub unsafe extern "C" fn ahp_terminal_fold_data(
     h: *const AhpTerminalState,
     items: *const *const c_char,
     count: usize,
 ) -> *mut AhpTerminalState {
-    let state = match borrow(h) {
-        None => return ::std::ptr::null_mut(),
-        Some(s) => s,
-    };
+    if count > MAX_FOLD_ITEMS {
+        return ::std::ptr::null_mut();
+    }
     if items.is_null() && count != 0 {
         return ::std::ptr::null_mut();
     }
-    let mut actions: Vec<Rc<TerminalAction>> = Vec::with_capacity(count);
+    let mut reg = enter();
+    if reg.get(h).is_none() {
+        return ::std::ptr::null_mut();
+    }
+    // Grown as elements are validated, never sized from an untrusted `count`.
+    let mut actions: Vec<Rc<TerminalAction>> = Vec::new();
     for i in 0..count {
         match to_dafny_str(*items.add(i)) {
             None => return ::std::ptr::null_mut(),
@@ -189,15 +325,20 @@ pub unsafe extern "C" fn ahp_terminal_fold_data(
         }
     }
     let seq = Sequence::<Rc<TerminalAction>>::from_array_owned(actions);
-    // vvv the verified kernel fold vvv
-    handle(crate::Terminal::_default::fold(state, &seq))
+    let state = match reg.get(h) {
+        None => return ::std::ptr::null_mut(),
+        // vvv the verified kernel fold vvv
+        Some(state) => crate::Terminal::_default::fold(state, &seq),
+    };
+    reg.insert(state)
 }
 
 // -------------------------------------------------------------------- readouts
 
 #[no_mangle]
-pub unsafe extern "C" fn ahp_terminal_title(h: *const AhpTerminalState) -> *mut c_char {
-    match borrow(h) {
+pub extern "C" fn ahp_terminal_title(h: *const AhpTerminalState) -> *mut c_char {
+    let reg = enter();
+    match reg.get(h) {
         None => ::std::ptr::null_mut(),
         Some(s) => from_dafny_str(s.title()),
     }
@@ -205,8 +346,9 @@ pub unsafe extern "C" fn ahp_terminal_title(h: *const AhpTerminalState) -> *mut 
 
 /// Returns NULL when the reducer holds `None` for cwd (distinct from "" ).
 #[no_mangle]
-pub unsafe extern "C" fn ahp_terminal_cwd(h: *const AhpTerminalState) -> *mut c_char {
-    match borrow(h) {
+pub extern "C" fn ahp_terminal_cwd(h: *const AhpTerminalState) -> *mut c_char {
+    let reg = enter();
+    match reg.get(h) {
         None => ::std::ptr::null_mut(),
         Some(s) => match &**s.cwd() {
             AhpOption::Some { value } => from_dafny_str(value),
@@ -215,13 +357,14 @@ pub unsafe extern "C" fn ahp_terminal_cwd(h: *const AhpTerminalState) -> *mut c_
     }
 }
 
-/// 1 = present (value written to `out`), 0 = None.
+/// 1 = present (value written to `out`), 0 = None or invalid handle.
 #[no_mangle]
 pub unsafe extern "C" fn ahp_terminal_exit_code(
     h: *const AhpTerminalState,
     out: *mut i64,
 ) -> i32 {
-    let s = match borrow(h) {
+    let reg = enter();
+    let s = match reg.get(h) {
         None => return 0,
         Some(s) => s,
     };
@@ -236,14 +379,15 @@ pub unsafe extern "C" fn ahp_terminal_exit_code(
     }
 }
 
-/// 1 = present, 0 = None.
+/// 1 = present, 0 = None or invalid handle.
 #[no_mangle]
 pub unsafe extern "C" fn ahp_terminal_size(
     h: *const AhpTerminalState,
     cols: *mut i64,
     rows: *mut i64,
 ) -> i32 {
-    let s = match borrow(h) {
+    let reg = enter();
+    let s = match reg.get(h) {
         None => return 0,
         Some(s) => s,
     };
@@ -261,10 +405,11 @@ pub unsafe extern "C" fn ahp_terminal_size(
     }
 }
 
-/// Number of content parts accumulated by the reducer.
+/// Number of content parts accumulated by the reducer. 0 on an invalid handle.
 #[no_mangle]
-pub unsafe extern "C" fn ahp_terminal_content_len(h: *const AhpTerminalState) -> usize {
-    match borrow(h) {
+pub extern "C" fn ahp_terminal_content_len(h: *const AhpTerminalState) -> usize {
+    let reg = enter();
+    match reg.get(h) {
         None => 0,
         Some(s) => s.content().cardinality_usize(),
     }
@@ -284,6 +429,9 @@ pub unsafe extern "C" fn ahp_terminal_content_len(h: *const AhpTerminalState) ->
 // silent-failure path. Prints the corpus board to stdout.
 #[no_mangle]
 pub extern "C" fn ahp_run_corpus() -> i32 {
+    // Held like every other entry point: the corpus builds and reads core
+    // values, so it must not run beside another thread doing the same.
+    let _reg = enter();
     let args: Sequence<Sequence<DafnyChar>> = Sequence::from_array_owned(vec![]);
     crate::ClientMain::_default::Main(&args);
     0

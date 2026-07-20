@@ -1,0 +1,16 @@
+{
+  "reducer": "canvas",
+  "initial": {
+    "canvasId": "image",
+    "providerId": "acme.viewers",
+    "activity": "rendering",
+    "availability": "stale"
+  },
+  "actions": [{"type": "canvas/nonExistentAction", "opaque": [1, null, true]}],
+  "expected": {
+    "canvasId": "image",
+    "providerId": "acme.viewers",
+    "activity": "rendering",
+    "availability": "stale"
+  }
+}

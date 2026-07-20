@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Persistent net10 C# harness project for the Phase-2 REDUCER-REPLAY corpus
+    (gen/run-reducer-replay.sh). Replaces the fragile "dafny run, target cs"
+    transient path (net8.0, project files auto-generated + deleted per run,
+    prone to a stale-net8-artifact class of failures across dafny-version
+    upgrades; see git history for the prior spec/replay/*.csproj shape).
+
+    One project, parameterized by the Channel MSBuild property (pass it via
+    "-p:Channel=<name>" on the dotnet run command line), is reused across all
+    7 channels (root, resourcewatch, changeset, annotations, terminal,
+    session, chat): each run of gen/run-reducer-replay.sh first regenerates
+    ../build/<Channel>_replay_cs.cs via "dafny translate cs" (with the
+    standard-libraries, translate-standard-library, no-verify, and
+    include-runtime flags; output set to build/<Channel>_replay_cs) against
+    spec/replay/<Channel>_replay.dfy.
+
+    Then this project compiles ONLY that one generated file (see
+    EnableDefaultCompileItems=false + the parameterized Compile/Include
+    below) and runs it via "dotnet run" against this project, passing
+    Channel=<name> plus the fixture paths.
+
+    Switching the Channel property between runs correctly triggers a rebuild
+    (MSBuild's up-to-date check sees a different resolved Compile item), even
+    when reusing the same shared obj/bin folders; verified empirically
+    switching resourcewatch to session and back to resourcewatch with no
+    "dotnet clean" between runs.
+
+    No StartupObject is needed: dafny translate's single generated .cs file
+    defines exactly one Main (the top-level "class __CallToMain"), unlike
+    mapper/Mapper.csproj which co-compiles a hand-written entry point
+    alongside the generated file and must disambiguate via StartupObject.
+
+    No PackageReference is needed on net10.0: BigInteger (System.Numerics)
+    and ImmutableDictionary (System.Collections.Immutable), which the Dafny
+    runtime uses internally, both ship in the shared framework. Per
+    gen/CS-HARNESS-PATTERN.md.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoWarn>CS8600;CS8603;CS8604;CS8605;CS8625;CS8629;CS8714;CS8765;CS8769;CS8981</NoWarn>
+    <RollForward>Major</RollForward>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../build/$(Channel)_replay_cs.cs" />
+  </ItemGroup>
+
+  <Import Project="../.conflux/runtime/dependencies/conflux-runtime/current/conflux-runtime.props" />
+
+</Project>

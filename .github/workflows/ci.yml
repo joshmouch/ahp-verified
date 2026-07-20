@@ -12,6 +12,14 @@ jobs:
         with: { dotnet-version: '8.0.x' }
       - run: dotnet build cs/src/Ahp.Core.Verified/Ahp.Core.Verified.csproj -c Release -warnaserror
       - run: dotnet run --project cs/test/Ahp.Core.Verified.SmokeTest -c Release
+      # The smoke test exercises the API surface; CorpusRunner replays the embedded
+      # 148-fixture corpus through the extracted reducers. Assert the total explicitly
+      # so a shrunken corpus fails instead of printing a smaller green number.
+      - name: corpus 148/148 against the extracted C# code
+        run: |
+          dotnet run --project cs/test/CorpusRunner -c Release | tee /tmp/cs-corpus.txt
+          grep -q 'TOTAL: 148/148 corpus fixtures green' /tmp/cs-corpus.txt
+          grep -q 'MULTI-CHANNEL CLIENT OK' /tmp/cs-corpus.txt
   javascript:
     runs-on: ubuntu-latest
     steps:
@@ -30,6 +38,16 @@ jobs:
         with: { go-version: '1.24' }
       # -p=1 -gcflags=-l: the extracted Chat reducer OOMs the inliner otherwise. See go/BUILDING.md
       - run: cd go && go build -p=1 -gcflags=-l ./... && go test -p=1 -gcflags=-l ./...
+      # `go test` alone asserts nothing here — the extracted packages carry no _test.go
+      # files, so it reports "no test files" for every package and exits 0. Run the
+      # corpus binary and require the exact 148/148 line, so this job actually fails
+      # when the extracted reducers stop agreeing with the corpus.
+      - name: corpus 148/148 against the extracted Go code
+        run: |
+          cd go
+          go run -gcflags=all=-l ./cmd/ahp | tee /tmp/go-corpus.txt
+          grep -q 'TOTAL: 148/148 corpus fixtures green' /tmp/go-corpus.txt
+          grep -q 'MULTI-CHANNEL CLIENT OK' /tmp/go-corpus.txt
   python:
     runs-on: ubuntu-latest
     steps:
@@ -37,7 +55,10 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
       - run: cd py && python -m pip install build && python -m build && python -m pip install dist/*.whl
-      - run: cd /tmp && python -c "import agent_host_protocol as a; r=a.run_corpus(); print(r); assert all(p==t for p,t in r.values())"
+      # check_corpus() pins every per-channel denominator and the 148 total, so an
+      # empty or shrunken result fails. The previous `assert all(p==t for p,t in
+      # r.values())` was vacuously true on an empty dict and also passed on (0,0) pairs.
+      - run: cd /tmp && python -c "import agent_host_protocol as a; r=a.check_corpus(); print(r); print('corpus', sum(t for _, t in r.values()), '/', a.CORPUS_TOTAL)"
   java:
     runs-on: ubuntu-latest
     steps:
@@ -45,3 +66,20 @@ jobs:
       - uses: actions/setup-java@v4
         with: { distribution: 'temurin', java-version: '21' }
       - run: cd java && mvn -B -q package
+  cpp:
+    # Builds the C ABI + C++ demo through the Go backend (cpp-via-go). This route
+    # needs only Go and clang++ — no Dafny, no private dependency — so it is the
+    # only C++ route that can run in public CI, and it is what backs the C++ row
+    # in the README packages table.
+    #
+    # NOT covered here: the cpp-via-dafny-next (Rust) route. It is excluded on
+    # purpose — its FFI layer has known memory-safety defects under concurrent
+    # use (see docs/ffi-safety.md). Do not promote C++ status on the strength of
+    # this job alone; it proves the Go-backed route builds and its corpus slice
+    # runs, single-threaded.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.24' }
+      - run: cd cpp-via-go && bash regenerate.sh

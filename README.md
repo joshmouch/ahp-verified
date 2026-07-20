@@ -4,9 +4,13 @@
 [![Dafny 4.11.0](https://img.shields.io/badge/Dafny-4.11.0-6f42c1.svg)](https://dafny.org)
 [![Targets: C%23 · JS · Python · Go · JVM](https://img.shields.io/badge/targets-C%23%20%C2%B7%20JS%20%C2%B7%20Python%20%C2%B7%20Go%20%C2%B7%20JVM-informational.svg)](#packages)
 
-**A formally verified implementation of the [Agent Host Protocol](https://github.com/microsoft/agent-host-protocol) — the reducers, codecs and protocol laws are stated as machine-checked theorems in Dafny, then mechanically extracted to C#, JavaScript, Python, Go and the JVM.**
+**A formally verified reducer core for the [Agent Host Protocol](https://github.com/microsoft/agent-host-protocol) — the reducers, codecs and protocol laws are stated as machine-checked theorems in Dafny, then mechanically extracted to C#, JavaScript, Python, Go and the JVM.**
 
 The shipped code in every language is the *same proven artifact*, not N independent hand-written re-interpretations. This is a third-party/community project by Joshua Mouch. It is **not** an official Microsoft product.
+
+> **This is a reducer core, not a client.** There is no transport here — no WebSocket, no dialer, no connection lifecycle, no session negotiation. What is proven and shipped is the state-transition layer: given a state and an action, what is the next state. If you are looking for something that talks to an agent host over a wire, this is not it; this is the piece such a client would sit on top of.
+
+> **Before you weigh any number below, read [REPRODUCIBILITY.md](REPRODUCIBILITY.md).** The corpus results and the extracted code are checkable from a clean clone in one command. **The proofs are not** — re-running them needs the Conflux runtime library, which is the author's own work and is not published yet. That document states exactly which claims are checkable, which are not, and what is vendored into the published packages.
 
 ---
 
@@ -46,16 +50,24 @@ TRUST-AUDIT OK — AHP reducer has zero owned findings; exactly 16 inherited
 
 The AHP-owned trusted surface is **zero**. All 16 findings are inherited from the imported runtime library, and each is pinned by exact symbol name *and* resolved origin path — any other symbol, any other origin, or a count ≠ 16 fails the gate. It is an enumerable list, not a blanket waiver. Adding a channel adds no trusted surface.
 
+**Read that claim precisely.** The trusted surface was not eliminated; it was *moved* into the runtime library (Conflux, the author's own — see [REPRODUCIBILITY.md](REPRODUCIBILITY.md)). Since Conflux is not published, a third party cannot currently audit the 16 assumptions the trust argument now rests on, nor re-run the gate that produced this output. "Zero owned" is true and is also narrower than it sounds.
+
 ### Corpus results
 
-| Check | Result | Scope |
-|---|---|---|
-| Reducer replay | **237/237** | 232 upstream fixtures + 5 canvas, full structural state equality, on C# and JS |
-| `Std.JSON` codec round-trip | **232/232** | parse → serialize → re-parse, ASTs identical (unknown-key + key-order preservation) |
-| Cross-lineage parity | **238/238** | Microsoft's own TypeScript reducer suite, unmodified, on the same corpus |
-| Extracted-code corpus | **148/148** | curated per-action corpus, run against the *extracted* code in each binding |
+| Check | Result | Scope | Runnable from a clean clone? |
+|---|---|---|---|
+| Reducer replay | **237/237** | 232 upstream fixtures + 5 canvas, full structural state equality, on C# and JS | needs Conflux |
+| `Std.JSON` codec round-trip | **232/232** | parse → serialize → re-parse, ASTs identical (unknown-key + key-order preservation) | needs Conflux |
+| Cross-lineage parity | **238/238** | upstream's own TypeScript reducer suite, unmodified | needs an upstream checkout |
+| Extracted-code corpus | **148/148** | curated per-action corpus, run against the *extracted* code in each binding | **yes** |
 
-Replay denominators are hard-coded per channel in the gate, so a fixture that failed to parse would drop the count and fail the build — nothing can be silently skipped.
+The 232 upstream fixtures are vendored at [`corpus/reducers/`](corpus/reducers/) with per-file checksums and full provenance — every one is upstream-authored, and none was written for this project. See [corpus/PROVENANCE.md](corpus/PROVENANCE.md). The 5 canvas fixtures are this project's own, which is why they are counted separately rather than folded into the upstream number.
+
+**The 238 is not the 232 plus six more fixtures.** Upstream's suite is 232 fixture cases *plus 6 suite-level unit tests* (`IS_CLIENT_DISPATCHABLE` ×2, `isClientDispatchable` ×2, reducer-immutability ×2). Only the fixture half has a Dafny counterpart; the other 6 are TypeScript-only.
+
+Replay denominators are hard-coded per channel in `gen/run-reducer-replay.sh`, so a fixture that failed to parse drops the count and fails that gate.
+
+**That property did not previously hold for the shipped tests, and now does.** Until recently `js/test/smoke.cjs` asserted only `pass === count` per channel, so every channel returning `(0,0)` printed "corpus OK — 0/0" and exited zero; the Python runner skipped any channel missing a `RunCorpus` entry point; and the CI assertion `all(p==t for p,t in r.values())` was vacuously true on an empty dict. All three are fixed — every per-channel denominator and the 148 total are now pinned in `js/test/smoke.cjs`, `agent_host_protocol.check_corpus()` and the CI workflow, and a missing runner raises instead of being skipped.
 
 ### Honest limits
 
@@ -64,11 +76,22 @@ Shipped deliberately, because you would find them anyway:
 - The `RootActionRoundTrip` / `AhpActionRoundTrip` lemmas carry preconditions excluding unknown variants. That case is **not unproven** — it has its own dual law (unknown leaves re-encode verbatim), and each precondition is guarded by an inhabitation witness so neither lemma is vacuously true.
 - **Anti-vacuity covers 7 of 8 channels.** Canvas is not in the gate's loop and has no non-vacuity witness yet.
 - **Mutation-seed robustness covers one verification task**, not all 626. Dafny's `--verify-included-files` defaults to false, so the seed-mutation arm resolves to `Main` alone.
-- The **148-fixture curated corpus is a modeled subset** for two channels (session 36 of 61, chat 54 of 97). The *replay* corpus covers both in full (session 63/63, chat 115/115).
+- The **148-fixture curated corpus is a modeled subset** for two channels: session **36 of 63**, chat **54 of 115**, against the corpus pinned in `corpus/`. The *replay* corpus covers both in full (session 63/63, chat 115/115). Note that the shipped extracted binaries still *print* "of 61" and "of 97" — stale denominators from an earlier upstream snapshot, explained in [REPRODUCIBILITY.md](REPRODUCIBILITY.md).
 - Proof binds Dafny-code to Dafny-model; replay binds Dafny-model to corpus. So a future TypeScript-vs-Dafny divergence localizes to the TypeScript side **only within the corpus-confirmed subset**; outside it, divergence is two-sided.
 - `dafny verify spec/client_main.dfy` alone reports `1 verified` — only `Main`. The gate verifies each file individually; that is what produces 626. Cite the gate, not the one-liner.
+- **The proofs cannot currently be re-run by a third party.** See [REPRODUCIBILITY.md](REPRODUCIBILITY.md). This is the most significant limit on this list.
+- **The published packages contain the Conflux runtime, inlined.** In the Python package that is 49 of 61 modules. Disclosed per-package in [NOTICE](NOTICE).
+- **The C ABI bindings are hand-written, unverified, and have known memory-safety defects under concurrent use.** The proofs cover the reducers; nothing covers the FFI layer wrapped around them. See [docs/ffi-safety.md](docs/ffi-safety.md).
+- **CI does not run the proofs** — it cannot, for the same reason. CI builds the committed extracted product and runs the corpus against it. Read the badge as evidence about the extraction, not the verification.
 
-Reproduce everything: `bash gen/check-all.sh`.
+## Reproducing this
+
+```bash
+bash gen/check-extracted-corpus.sh   # no private dependency; runs from a clean clone
+bash gen/check-all.sh                # the full gate — needs the Conflux runtime
+```
+
+The first checks the pinned corpus and runs it through the extracted code in four languages. The second re-runs the proofs and **will refuse to start** without the unpublished dependency rather than skipping quietly. [REPRODUCIBILITY.md](REPRODUCIBILITY.md) is the full account of which is which.
 
 ---
 
@@ -83,7 +106,7 @@ Reproduce everything: `bash gen/check-all.sh`.
 | **Python** | `agent-host-protocol` 0.1.0 | Wheel + sdist built, smoke test **148/148** green. Released on GitHub; registry publish pending credentials. |
 | **Go** | `github.com/joshmouch/ahp-verified/go` | Builds and runs the corpus **148/148** green. Tagged `go/v0.1.0`. Requires a build flag — see below. |
 | **JVM** | `agency.open.ahp:ahp-core` 0.1.0 | Extracted sources + `pom.xml` present; jar not built in this tree. Compilation needs `-Xmx8g` and is slow by design. |
-| **C++** | native lib + C ABI | **Shipping.** `dafny translate cpp` is impossible for this core, so C++ links a native library built from the verified core — recommended route is the **Rust** backend (`dafny translate rs`, already in Dafny 4.11.0). A C++ binary runs the corpus **148/148**. See [cpp/](cpp/). |
+| **C++** | native lib + C ABI | **Prototype — not recommended for production.** `dafny translate cpp` is impossible for this core, so C++ links a native library built from the verified core. A C++ binary runs the corpus **148/148** single-threaded. The FFI layer is hand-written, unverified, and **the Rust-backed route has confirmed memory-safety defects under concurrent use** (see [docs/ffi-safety.md](docs/ffi-safety.md)). Only the Go-backed route is exercised in CI. See [cpp/](cpp/). |
 
 ```bash
 dotnet add package Ahp.Core.Verified          # .NET
@@ -175,7 +198,13 @@ MIT, dual copyright:
 
 ## Further reading
 
-- [The verification explainer](site/index.html) — how the proofs are structured and what each law buys you, for readers who do not write Dafny.
+- **[REPRODUCIBILITY.md](REPRODUCIBILITY.md)** — what you can and cannot check from a clean clone, and why. Read this before weighing any number above.
+- [The verification explainer](docs/index.html) — how the proofs are structured and what each law buys you, for readers who do not write Dafny.
+- [The proofs themselves](spec/) — the Dafny sources. Every theorem this README names is greppable there.
+- [The gates](gen/) — every check script, including the ones that need the unpublished dependency.
+- [corpus/PROVENANCE.md](corpus/PROVENANCE.md) — where the fixtures came from, with checksums.
+- [NOTICE](NOTICE) — what is vendored into the published packages.
+- [docs/ffi-safety.md](docs/ffi-safety.md) — known defects in the hand-written C ABI layer.
 - Per-language notes: [.NET](cs/README.md) · [JavaScript](js/README.md) · [Python](py/README.md) · [Go](go/README.md) · [JVM](java/README.md) · [C++ blocker analysis](cpp/README.md)
 
 Authored by Joshua Mouch.

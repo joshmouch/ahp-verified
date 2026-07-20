@@ -14,12 +14,31 @@
  *   - `const char*` returns are owned by the library; do NOT free them.
  *   - On any failure, ahp_last_error() describes the most recent error on the
  *     calling thread. The pointer is valid until the next call on that thread.
- *   - Errors are reported per thread; the handle table is safe to use from
- *     multiple threads.
  *   - JSON emitted by this library is canonical: object keys are written in
  *     sorted order. Round-tripping therefore preserves the JSON *value*, and
  *     is byte-stable only for input already in canonical form. Compare
  *     outputs against outputs, not against hand-written input.
+ *
+ * Text
+ *   Input strings MUST be well-formed UTF-8. Malformed input is REFUSED: the
+ *   call fails and ahp_last_error() says so. This library will not substitute
+ *   U+FFFD for malformed bytes, because that silently merges DISTINCT inputs
+ *   into ONE verified state — after which the core's proven equality correctly
+ *   reports two different identifiers as equal.
+ *
+ * Threading
+ *   Errors are reported per thread. Every function here is safe to call
+ *   concurrently from any thread, including concurrent calls naming the SAME
+ *   handle: ahp_state_apply performs its read-reduce-write as one atomic step,
+ *   so concurrent applies to one handle all take effect (they serialize; none
+ *   is lost).
+ *
+ *   Calls into the verified core are SERIALIZED internally by a single lock.
+ *   That is required for correctness, not caution: the extracted core's own
+ *   sequences memoize themselves on first read through non-volatile fields, so
+ *   even two concurrent READERS of one state are a data race. The cost is that
+ *   independent handles do not proceed in parallel. Callers needing real
+ *   parallelism should shard across processes.
  *
  * Copyright (c) Microsoft Corporation.
  * Copyright (c) 2026 Josh Mouch.
@@ -123,8 +142,15 @@ char *ahp_state_to_json(ahp_state_t handle);
  */
 int ahp_state_equals(ahp_state_t a, ahp_state_t b);
 
-/** Releases a state handle. Safe to call with an already-released handle. */
+/**
+ * Releases a state handle. Safe to call with an already-released or
+ * never-issued handle: handles are never reused, so a stale one cannot come to
+ * name a different live state, and releasing it is a defined no-op.
+ */
 void ahp_state_free(ahp_state_t handle);
+
+/** 1 when the handle names a live state, 0 otherwise. */
+int ahp_state_valid(ahp_state_t handle);
 
 #ifdef __cplusplus
 } /* extern "C" */

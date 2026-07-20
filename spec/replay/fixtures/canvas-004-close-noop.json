@@ -1,0 +1,18 @@
+{
+  "reducer": "canvas",
+  "initial": {
+    "canvasId": "image",
+    "providerId": "acme.viewers",
+    "input": {"uri": "content-ref:/asset/7"},
+    "title": "Preview",
+    "availability": "ready"
+  },
+  "actions": [{"type": "canvas/closeRequested"}],
+  "expected": {
+    "canvasId": "image",
+    "providerId": "acme.viewers",
+    "input": {"uri": "content-ref:/asset/7"},
+    "title": "Preview",
+    "availability": "ready"
+  }
+}

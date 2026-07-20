@@ -4,7 +4,9 @@
 
 This is a third-party community project by Joshua Mouch. It is not an official Microsoft product and carries no Microsoft endorsement. MIT licensed, dual copyright: Microsoft (the protocol and the original client) and Joshua Mouch (the Dafny verification and extraction).
 
-This document explains what "verified" means here, what it does not mean, and how to check every claim yourself. It is deliberately specific about the limits. If you are evaluating whether to trust this code, the limits section is the part that matters.
+This document explains what "verified" means here and what it does not mean. It is deliberately specific about the limits. If you are evaluating whether to trust this code, the limits section is the part that matters.
+
+> **On checking these claims yourself.** Some you can, some you currently cannot, and the difference is not cosmetic. The fixture corpus and the extracted code are checkable from a clean clone — `bash gen/check-extracted-corpus.sh`. **The proofs are not**: re-running them requires the Conflux runtime library, which is the author's own work and is not published. The proof sources are in `spec/` and can be read; they cannot presently be re-verified by a third party. [REPRODUCIBILITY.md](REPRODUCIBILITY.md) sets out claim by claim which is which, and what that means for the "zero owned trusted assumptions" result below.
 
 Toolchain: Dafny 4.11.0. Every command in this document was run against the state of the repository it ships with.
 
@@ -113,6 +115,10 @@ Conflux process/identity/identity-fact/storage/UTF-8/io declarations classified 
 This is not a blanket waiver. The gate pins each of the 16 by exact symbol name *and* resolved library origin: `RunProcessBounded`, `CurrentProcessRssMb`, `MonotonicTimeMs`, `CanonicalJsonBytes`, `DecodeCanonicalJson`, `Sha256Digest`, `CanonicalJsonRoundTrips`, `Sha256DigestIsValid`, `AtomicWriteFile`, `AtomicWriteBytes`, `InspectPath`, `EncodeUtf8`, `DecodeUtf8`, `ReadStdinLineWithin`, `ProcessExitStatus`, `TerminateProcessTreeWithin`. Any other symbol, a different origin path, or a count other than 16 fails the gate.
 
 The practical consequence: **adding a channel adds zero trusted surface.** A new reducer and decoder are proven Dafny. The trusted set is fixed by the codec and I/O choices, not by protocol coverage.
+
+**What "zero owned" does and does not mean.** All sixteen resolve to `conflux-runtime.doo`. So the trusted surface was not eliminated — it was relocated into Conflux, which is the author's own runtime library and is **not published**. A third party can read the pinned list above (`gen/check-trust-audit.sh` is in this repository) but cannot audit the declarations themselves, nor re-run the gate that produced this output. "Zero owned, sixteen inherited" is exactly true and is narrower than it first reads. See [REPRODUCIBILITY.md](REPRODUCIBILITY.md).
+
+**Conflux is also redistributed inside the published packages** — 49 of 61 modules in the Python wheel, and proportionate amounts elsewhere. Dafny extraction inlines the library, so there is no separate dependency to install. Disclosed per package in [NOTICE](NOTICE).
 
 ### 2.4 The gates that bound the proofs — including where they fall short
 

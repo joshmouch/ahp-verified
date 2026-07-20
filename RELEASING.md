@@ -72,7 +72,9 @@ go get github.com/joshmouch/ahp-verified/go@v0.1.0
 
 1. Bump the version in the target's manifest (`cs/.../*.csproj`, `js/package.json`,
    `py/pyproject.toml`, `java/pom.xml`).
-2. Regenerate from the Dafny core if the protocol changed — see [SYNC](SYNC.md) if present, and
-   note that regeneration requires Dafny 4.11.0 plus the Conflux runtime dependency.
+2. Regenerate from the Dafny core if the protocol changed. Regeneration requires
+   Dafny 4.11.0 plus the Conflux runtime package, which is not published — see
+   [REPRODUCIBILITY.md](REPRODUCIBILITY.md). The gates live in [gen/](gen/); the
+   proof sources live in [spec/](spec/).
 3. Commit, tag `<lang>/vX.Y.Z`, push. The tag cuts a GitHub Release.
 4. Run the corresponding publish workflow with `publish`.

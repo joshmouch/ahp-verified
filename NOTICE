@@ -1,0 +1,60 @@
+AHP Verified
+Copyright (c) Microsoft Corporation
+Copyright (c) 2026 Josh Mouch
+
+This product is licensed under the MIT License. See LICENSE.
+
+This is a third-party community project. It is not an official Microsoft product and
+is not affiliated with, endorsed by, or supported by Microsoft.
+
+================================================================================
+Components included in this distribution
+================================================================================
+
+1. Agent Host Protocol — protocol definition, TypeScript types, and reducer
+   fixture corpus.
+
+   Copyright (c) Microsoft Corporation
+   Licensed under the MIT License.
+   Source: https://github.com/microsoft/agent-host-protocol
+
+   Used here in two ways:
+     - the wire types under gen/mirror.generated.dfy are generated from upstream's
+       types/ directory by gen/generate-dafny.ts;
+     - the 232 reducer fixtures under corpus/reducers/ are vendored unmodified.
+       See corpus/PROVENANCE.md for the exact snapshot and per-file checksums.
+
+2. Conflux runtime library — a Dafny runtime library providing the reducer kernel
+   (ConfluxContract.Fold), the JSON codec (ConfluxCodec), keyed-sequence routing
+   primitives (ConfluxSeqRoute), content addressing, and capability seams.
+
+   Copyright (c) 2026 Josh Mouch
+   Licensed under the MIT License as part of this distribution.
+
+   DISCLOSURE: Conflux is REDISTRIBUTED INSIDE the published packages. Dafny
+   extraction inlines the library into the emitted source, so there is no separate
+   Conflux dependency to install — the code is compiled into every artifact:
+
+     Python   agent-host-protocol            49 of 61 modules under _core/
+     Go       .../ahp-verified/go            52 of 66 tracked .go files
+     JavaScript @open-agency/ahp             48 Conflux modules inside dist/ahp.cjs
+     .NET     Ahp.Core.Verified              49 of 72 namespaces in AhpCore.g.cs,
+                                             plus 5 Runtime/Conflux*Adapter.cs files
+     JVM      agency.open.ahp:ahp-core       25 files across 6 Conflux* packages
+
+   The Conflux source repository is not currently public and, at the time of
+   writing, carries no LICENSE file of its own. Because Conflux is the work of
+   Josh Mouch, the MIT grant in this repository's LICENSE (under the Josh Mouch
+   copyright line) is intended to cover the Conflux code redistributed here.
+
+   The practical consequence for a reader is that the proofs in spec/ cannot be
+   re-verified without the Conflux package, which is not published. This is
+   documented in full in REPRODUCIBILITY.md, including what that means for the
+   "zero owned trusted assumptions" claim.
+
+3. Dafny runtime support code — emitted by the Dafny compiler into each target
+   language (_dafny, module_, System_, DafnyRuntime and equivalents).
+
+   Copyright (c) Microsoft Corporation
+   Licensed under the MIT License.
+   Source: https://github.com/dafny-lang/dafny

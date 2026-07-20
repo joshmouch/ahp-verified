@@ -10,16 +10,23 @@
 const assert = require('node:assert');
 const ahp = require('..');
 
-const CHANNELS = [
-  'AhpSkeleton',
-  'ResourceWatch',
-  'Canvas',
-  'Changeset',
-  'Annotations',
-  'Terminal',
-  'Session',
-  'Chat',
-];
+// Per-channel fixture counts are PINNED. A channel that returns a different total —
+// because a fixture failed to load, or the extraction shipped incomplete — fails the
+// build instead of quietly reporting a smaller green number. Previously this file
+// asserted only `pass === count` per channel, so every channel returning (0,0) printed
+// "corpus OK — 0/0" and exited zero.
+const EXPECTED = {
+  AhpSkeleton: 7,
+  ResourceWatch: 2,
+  Canvas: 5,
+  Changeset: 15,
+  Annotations: 10,
+  Terminal: 19,
+  Session: 36,
+  Chat: 54,
+};
+const CHANNELS = Object.keys(EXPECTED);
+const EXPECTED_TOTAL = Object.values(EXPECTED).reduce((a, b) => a + b, 0); // 148
 
 // 1 + 2. Export surface.
 for (const name of CHANNELS) {
@@ -46,7 +53,18 @@ for (const name of CHANNELS) {
   totalCount += c;
   console.log(`  ${name.padEnd(14)} ${p}/${c}`);
   assert.strictEqual(p, c, `${name}: ${c - p} fixture(s) failed`);
+  assert.strictEqual(
+    c,
+    EXPECTED[name],
+    `${name}: expected ${EXPECTED[name]} fixtures, ran ${c} — the corpus changed size`,
+  );
 }
+assert.strictEqual(
+  totalCount,
+  EXPECTED_TOTAL,
+  `corpus total ${totalCount}, expected ${EXPECTED_TOTAL}`,
+);
+assert.strictEqual(totalPass, EXPECTED_TOTAL, `${EXPECTED_TOTAL - totalPass} fixture(s) failed`);
 console.log(`corpus OK — ${totalPass}/${totalCount} fixtures green against extracted code`);
 
 // 4. Construct a datatype + call a pure reducer helper directly, proving the

@@ -21,7 +21,7 @@ extern const char *_GoStringPtr(_GoString_ s);
 /* Start of preamble from import "C" comments.  */
 
 
-#line 20 "ahp_bridge.go"
+#line 54 "ahp_bridge.go"
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -103,6 +103,7 @@ extern char* ahp_canvas_activity(uintptr_t handle);
 extern char* ahp_canvas_content_uri(uintptr_t handle);
 extern int ahp_canvas_availability(uintptr_t handle);
 extern int ahp_canvas_equals(uintptr_t a, uintptr_t b);
+extern int ahp_canvas_valid(uintptr_t handle);
 extern void ahp_canvas_release(uintptr_t handle);
 
 #ifdef __cplusplus

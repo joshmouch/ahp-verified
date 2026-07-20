@@ -26,10 +26,43 @@
  *     ahp_canvas_release(). The reducers are pure: applying an action neither
  *     invalidates nor modifies the input handle, it returns a new one.
  *
+ * Handles are opaque tokens, not pointers
+ * ---------------------------------------
+ *   A Canvas handle names an entry in a table inside the library. It is NOT an
+ *   address: do not dereference it, do no arithmetic on it, do not synthesize
+ *   one. 0 is never a valid handle. Handles are never reused, so a released
+ *   handle can never come to name a different live state.
+ *
+ *   Passing an invalid handle — zero, never issued, or already released — is
+ *   DEFINED behaviour, not a crash. Such a call is refused: char*-returning
+ *   functions return NULL, handle-returning functions return 0, int-returning
+ *   functions return -1, and ahp_canvas_release() is a no-op (so double-free is
+ *   harmless). ahp_canvas_valid() reports whether a handle is live.
+ *
  * Threading
  * ---------
- *   The embedded Go runtime initializes on first call and is safe to call
- *   from multiple threads. The verified reducers are pure functions.
+ *   Every function here is safe to call concurrently from any thread. Calls
+ *   into the verified core are SERIALIZED internally by a single lock.
+ *
+ *   That lock is required for correctness, not merely for the handle table.
+ *   The reducers are pure functions, but the extracted core's data structures
+ *   are not: dafny.LazySequence memoizes its flattened form on first read, and
+ *   the Go runtime's AtomicBox is an unsynchronized struct field, so two
+ *   threads READING one sequence is a data race. Dafny values structurally
+ *   share subterms across derived states, so that race is reachable from
+ *   ordinary use of this ABI. Serializing is the fix available to a binding
+ *   over already-extracted code. The cost is that independent states do not
+ *   proceed in parallel; shard across processes if you need real parallelism.
+ *
+ * Text
+ * ----
+ *   All strings are NUL-terminated UTF-8. Invalid UTF-8 is REFUSED, never
+ *   repaired: the call fails per the convention above. This library will not
+ *   substitute U+FFFD for malformed bytes. Doing so merges DISTINCT inputs into
+ *   ONE verified state — "c\xff" and "c\xfe" would both become "c�", after
+ *   which the core's proven equality correctly reports two different canvasIds
+ *   as equal. Refusing keeps the values the proofs reason about faithful to
+ *   what the caller supplied.
  *
  * Copyright (c) Microsoft Corporation
  * Copyright (c) 2026 Josh Mouch
@@ -100,6 +133,12 @@ extern char* ahp_json_canonicalize(const char* text);
  * Computes the verified command-identity digest over `length` bytes at
  * `data`, in the core's "sha256:<hex>" spelling. Release with
  * ahp_string_free.
+ *
+ * Returns NULL when `length` is negative or exceeds 268435456 (256 MiB), or
+ * when `data` is NULL with a non-zero `length`. The true size of a C buffer
+ * cannot be checked against the buffer, so the bound refuses lengths that
+ * cannot name a real one — notably a negative value arriving from a signed
+ * subtraction — before any allocation is sized from the number.
  */
 extern char* ahp_sha256_digest(const char* data, int length);
 
@@ -108,7 +147,8 @@ extern char* ahp_sha256_digest(const char* data, int length);
 /*
  * Builds a fresh CanvasState with the given identifiers, no title, activity,
  * content URI or input, and Ready availability. Returns an opaque handle the
- * caller releases with ahp_canvas_release.
+ * caller releases with ahp_canvas_release, or 0 when either identifier is NULL
+ * or is not well-formed UTF-8.
  */
 extern uintptr_t ahp_canvas_new(const char* canvasID, const char* providerID);
 
@@ -153,18 +193,30 @@ extern char* ahp_canvas_activity(uintptr_t handle);
 /* Returns the contentUri, or NULL when None. Release non-NULL with ahp_string_free. */
 extern char* ahp_canvas_content_uri(uintptr_t handle);
 
-/* Returns AHP_AVAILABILITY_READY or AHP_AVAILABILITY_STALE. */
+/*
+ * Returns AHP_AVAILABILITY_READY or AHP_AVAILABILITY_STALE, or -1 when the
+ * handle is invalid.
+ */
 extern int ahp_canvas_availability(uintptr_t handle);
 
 /*
  * Structural equality over two Canvas states, decided by the extracted
- * datatype's own equality. Returns 1 when equal, 0 otherwise.
+ * datatype's own equality. Returns 1 when equal, 0 when not, and -1 when
+ * either handle is invalid — so "cannot answer" is distinguishable from
+ * "not equal".
  */
 extern int ahp_canvas_equals(uintptr_t a, uintptr_t b);
 
 /*
+ * Returns 1 when the handle names a live Canvas state, 0 otherwise (zero,
+ * never issued, or already released). There is no other way to test a handle.
+ */
+extern int ahp_canvas_valid(uintptr_t handle);
+
+/*
  * Releases a Canvas handle. Every handle returned by ahp_canvas_new or an
- * ahp_canvas_apply_* call must be released exactly once.
+ * ahp_canvas_apply_* call should be released exactly once. Releasing a handle
+ * that was never issued, or that was already released, is a defined no-op.
  */
 extern void ahp_canvas_release(uintptr_t handle);
 

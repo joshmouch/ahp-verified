@@ -1,0 +1,24 @@
+{
+  "reducer": "canvas",
+  "initial": {
+    "canvasId": "markdown",
+    "providerId": "acme.editors",
+    "title": "Draft",
+    "activity": "idle",
+    "contentUri": "ahp-session:/content/1",
+    "availability": "ready"
+  },
+  "actions": [{
+    "type": "canvas/updated",
+    "activity": "error",
+    "availability": "stale"
+  }],
+  "expected": {
+    "canvasId": "markdown",
+    "providerId": "acme.editors",
+    "title": "Draft",
+    "activity": "error",
+    "contentUri": "ahp-session:/content/1",
+    "availability": "stale"
+  }
+}

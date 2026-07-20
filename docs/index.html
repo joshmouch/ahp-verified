@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AHP Verified — a formally verified Agent Host Protocol client</title>
+<title>AHP Verified — a formally verified Agent Host Protocol reducer core</title>
 <meta name="description" content="A formally verified implementation of the Microsoft Agent Host Protocol. Written in Dafny, proven with 626 machine-checked verification units, and extracted to native source in multiple languages.">
 <meta name="author" content="Joshua Mouch">
 <meta name="color-scheme" content="dark light">
 <meta property="og:title" content="AHP Verified">
-<meta property="og:description" content="The protocol's laws stated as machine-checked theorems, then extracted to running code. 626 verification units, 0 errors. Zero trusted assumptions in the reducer client.">
+<meta property="og:description" content="The protocol's laws stated as machine-checked theorems, then extracted to running code. 626 verification units, 0 errors. Zero AHP-owned trusted assumptions in the reducer core.">
 <meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230d0f12'/><path d='M9 16.5l4.6 4.6L23 11.7' stroke='%235eead4' stroke-width='2.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
 <style>
@@ -290,7 +290,7 @@ footer{border-top:1px solid var(--line); padding:52px 0 66px; color:var(--fg-dim
     <h1>The protocol's laws, <em>proven</em> — then extracted to running code.</h1>
 
     <p class="hero-sub">
-      A formally verified client for the Microsoft <strong>Agent Host Protocol</strong>.
+      A formally verified reducer core for the Microsoft <strong>Agent Host Protocol</strong>. Not a client — there is no transport, no connection lifecycle, no session negotiation; this is the state-transition layer such a client would sit on.
       Eight channel reducers, seven wire codecs and the version registry are stated as
       machine-checked theorems in Dafny, then extracted by compiler to native source in
       each target language — so every language ships the <strong>same proven artifact</strong>
@@ -333,9 +333,9 @@ footer{border-top:1px solid var(--line); padding:52px 0 66px; color:var(--fg-dim
       <div class="eyebrow">The argument</div>
       <h2>Tests sample the input space. Proofs cover it.</h2>
       <p class="lede">
-        Every other AHP client is hand-written and tested. That is a reasonable engineering
+        Every AHP client is hand-written and tested. That is a reasonable engineering
         choice — and it means correctness is asserted at the points someone thought to check.
-        This client states the protocol's laws as theorems the verifier must discharge over
+        This core states the protocol's laws as theorems the verifier must discharge over
         <em>all</em> inputs, and derives the implementation from them.
       </p>
     </div>
@@ -373,7 +373,7 @@ footer{border-top:1px solid var(--line); padding:52px 0 66px; color:var(--fg-dim
         read as real JSON, decoded into domain values, folded through the actual proven reducer,
         and compared to the expected state with a whole-value <code>==</code> — not a field-subset
         assertion. Strict full-state equality is a far sharper oracle than per-assertion sampling,
-        and building this client it caught modeling defects that a curated hand-written corpus
+        and building this core it caught modeling defects that a curated hand-written corpus
         had passed.
       </p>
     </div>
@@ -385,11 +385,21 @@ footer{border-top:1px solid var(--line); padding:52px 0 66px; color:var(--fg-dim
   <div class="wrap">
     <div class="sec-head">
       <div class="eyebrow">Verified claims</div>
-      <h2>Five results, each re-runnable from a clean checkout</h2>
+      <h2>Five results, and what it takes to re-run each</h2>
       <p class="lede">
         Every number below was produced by running the gate, not by reading a changelog.
         <code>bash gen/check-all.sh</code> is the executable specification; where a figure and a
         document disagree, the gate wins.
+      </p>
+      <p class="lede" style="margin-top:14px">
+        <strong>But you cannot run that gate today.</strong> It needs the Conflux runtime library,
+        which is not published, so H1 and H2 below are <em>not</em> independently checkable —
+        the proof sources are readable in <code>spec/</code>, but they cannot be re-verified by a
+        third party. H3 and H5's Dafny half need it too. What you <em>can</em> run from a clean
+        clone is <code>bash gen/check-extracted-corpus.sh</code>, which checks the pinned corpus
+        and replays it through the extracted code in four languages. See
+        <a href="https://github.com/joshmouch/ahp-verified/blob/main/REPRODUCIBILITY.md">REPRODUCIBILITY.md</a>
+        for the claim-by-claim breakdown.
       </p>
     </div>
 
@@ -398,7 +408,7 @@ footer{border-top:1px solid var(--line); padding:52px 0 66px; color:var(--fg-dim
       <article class="claim">
         <div class="claim-id">H1</div>
         <div>
-          <h3>Zero trusted assumptions in the reducer client, mechanically enforced</h3>
+          <h3>Zero AHP-owned trusted assumptions in the reducer core, mechanically enforced</h3>
           <p>
             The first question a formal-methods skeptic asks is <em>“what did you assume away?”</em>
             Here the answer is enumerable. <code>dafny audit</code> reports 16 findings — every one
@@ -829,8 +839,8 @@ footer{border-top:1px solid var(--line); padding:52px 0 66px; color:var(--fg-dim
           </tr>
           <tr>
             <td class="lang">C++</td>
-            <td><span class="pill proven">shipping via C ABI</span></td>
-            <td><code>dafny translate cpp</code> cannot express this core — no unbounded <code>int</code>/<code>nat</code>, no higher-order functions, no <code>Std.JSON</code>, all used pervasively (60 <code>int</code> + 47 <code>nat</code> fields, 26 arrow signatures). Re-confirmed on Dafny nightly 4.11.1. So C++ links a native library built <em>from</em> the verified core instead — recommended route is the <strong>Rust</strong> backend (<code>dafny translate rs</code>, already in 4.11.0, which handles both blockers). <small>A C++ binary runs the core’s own conformance corpus: 148/148 green, all 8 channels. The reducers are machine-derived from the proofs; the FFI binding around them is hand-written and is not verified.</small></td>
+            <td><span class="pill">prototype</span></td>
+            <td><code>dafny translate cpp</code> cannot express this core — no unbounded <code>int</code>/<code>nat</code>, no higher-order functions, no <code>Std.JSON</code>, all used pervasively (60 <code>int</code> + 47 <code>nat</code> fields, 26 arrow signatures). Re-confirmed on Dafny nightly 4.11.1. So C++ links a native library built <em>from</em> the verified core instead — three routes exist (Go c-archive, .NET NativeAOT, Rust). <small>A C++ binary runs the core’s own conformance corpus: 148/148 green, all 8 channels, <strong>single-threaded</strong>. The reducers are machine-derived from the proofs; the FFI binding around them is hand-written, is not verified, and has <strong>confirmed memory-safety defects under concurrent use</strong> — the Rust route crashed 18 of 20 runs in a two-thread test, and the .NET route silently lost 233 of 600 concurrent updates. Only the Go route is exercised in CI. Not recommended for production; see <a href="https://github.com/joshmouch/ahp-verified/blob/main/docs/ffi-safety.md">docs/ffi-safety.md</a>.</small></td>
             <td>None</td>
           </tr>
         </tbody>
@@ -900,12 +910,14 @@ footer{border-top:1px solid var(--line); padding:52px 0 66px; color:var(--fg-dim
         </p>
       </div>
       <div class="cav-item">
-        <h4>The repository's own README is stale</h4>
+        <h4>You cannot re-run the proofs today</h4>
         <p>
-          It still reports an earlier corpus size, channel count and generated-type count. Where
-          a document and the gate disagree, <code>gen/check-all.sh</code> is authoritative —
-          every figure on this page comes from the gate or from a command run directly against
-          the source.
+          Re-running <code>gen/check-all.sh</code> needs the Conflux runtime library — the
+          author's own Dafny runtime, not yet published. So the corpus results and the extracted
+          code are checkable from a clean clone, and <strong>the verification claims are not</strong>.
+          The proof sources are in <code>spec/</code> and can be read; they cannot currently be
+          re-checked by a third party. This is the largest limit on this page. See
+          <a href="https://github.com/joshmouch/ahp-verified/blob/main/REPRODUCIBILITY.md">REPRODUCIBILITY.md</a>.
         </p>
       </div>
     </div>
@@ -933,9 +945,10 @@ footer{border-top:1px solid var(--line); padding:52px 0 66px; color:var(--fg-dim
 </code></pre>
     </div>
     <p class="lede" style="margin-top:20px; font-size:14.5px">
-      Requires Dafny 4.11.0, the .NET SDK and Node. The gate pins every per-channel denominator,
-      so a fixture that fails to parse shortens a count and fails the build rather than
-      disappearing quietly.
+      Requires Dafny 4.11.0, the .NET SDK, Node — <strong>and the Conflux runtime package, which
+      is not published</strong>. Without it <code>check-all.sh</code> refuses to start rather than
+      skipping quietly. The gate pins every per-channel denominator, so a fixture that fails to
+      parse shortens a count and fails the build rather than disappearing quietly.
     </p>
   </div>
 </section>
