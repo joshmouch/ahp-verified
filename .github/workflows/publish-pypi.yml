@@ -1,7 +1,13 @@
 name: Publish PyPI
-# Uses Trusted Publishing (OIDC) — configure the publisher on PyPI for this repo/workflow.
+# MANUAL trigger. Uses Trusted Publishing (OIDC) — configure a PyPI publisher for
+# this repo + workflow first, otherwise the exchange fails by design.
 on:
-  push: { tags: ['py/v[0-9]+.[0-9]+.[0-9]+'] }
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "publish" to upload to PyPI'
+        required: true
+        default: 'dry-run'
 permissions: { contents: read, id-token: write }
 jobs:
   publish:
@@ -12,5 +18,8 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
       - run: cd py && python -m pip install build && python -m build
+      - name: Verify the built wheel imports and the corpus passes
+        run: cd py && python -m pip install dist/*.whl && cd /tmp && python -c "import agent_host_protocol as a; r=a.run_corpus(); assert all(p==t for p,t in r.values()); print('corpus green:', r)"
       - uses: pypa/gh-action-pypi-publish@release/v1
+        if: ${{ inputs.confirm == 'publish' }}
         with: { packages-dir: py/dist }
