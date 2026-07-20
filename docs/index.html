@@ -592,7 +592,7 @@ footer{border-top:1px solid var(--line); padding:52px 0 66px; color:var(--fg-dim
             <rect x="592" y="168" width="196" height="52" rx="9" fill="var(--panel-2)" stroke="var(--line-strong)" stroke-dasharray="4 3"/>
             <circle cx="612" cy="194" r="3.5" fill="none" stroke="currentColor" stroke-opacity=".6"/>
             <text class="svg-node" x="626" y="190">Go · Java · Python</text>
-            <text class="svg-sub" x="626" y="206">supported · not yet run</text>
+            <text class="svg-sub" x="626" y="206">extracted &#183; released</text>
           </g>
           <g opacity=".45">
             <rect x="592" y="230" width="196" height="52" rx="9" fill="none" stroke="var(--line-strong)" stroke-dasharray="4 3"/>
@@ -810,21 +810,21 @@ footer{border-top:1px solid var(--line); padding:52px 0 66px; color:var(--fg-dim
           </tr>
           <tr>
             <td class="lang">Go</td>
-            <td><span class="pill ready">not yet run</span></td>
-            <td>Mature, non-experimental backend. No known structural blocker; the extraction has simply not been run and validated against the corpus.
+            <td><span class="pill proven">extracted</span></td>
+            <td>Extracted and released. <code>go build</code> + tests green; the corpus runs green against the extracted code. Requires <code>-p=1 -gcflags=-l</code> (the extracted Chat reducer OOMs the Go inliner otherwise).
               <small>Classified as engineering effort, not proof risk.</small></td>
             <td>First-party client in-tree</td>
           </tr>
           <tr>
             <td class="lang">Java</td>
-            <td><span class="pill ready">not yet run</span></td>
-            <td>Mature backend, same status as Go.</td>
+            <td><span class="pill proven">extracted</span></td>
+            <td>Extracted and released. Compiles against DafnyRuntime.jar; jar published to GitHub Releases.</td>
             <td>First-party Kotlin/JVM client</td>
           </tr>
           <tr>
             <td class="lang">Python</td>
-            <td><span class="pill ready">not yet run</span></td>
-            <td>Mature backend with native big-integer support, same status as Go.</td>
+            <td><span class="pill proven">extracted</span></td>
+            <td>Extracted and released. Wheel + sdist verified by a clean-room venv install from outside the source tree; corpus green; zero third-party dependencies.</td>
             <td>Proposed only</td>
           </tr>
           <tr>

@@ -78,10 +78,10 @@ Reproduce everything: `bash gen/check-all.sh`.
 
 | Target | Package | Status |
 |---|---|---|
-| **.NET** | `Ahp.Core.Verified` 0.1.0 | Artifact built — self-contained `net8.0` assembly, no external dependencies. Not published. |
-| **JavaScript** | `@open-agency/ahp` 0.1.0 | Artifact built, smoke test **148/148** green. Not published. |
-| **Python** | `agent-host-protocol` 0.1.0 | Wheel + sdist built, smoke test **148/148** green. Not published. |
-| **Go** | `github.com/joshmouch/ahp-go` | Builds and runs the corpus **148/148** green. No published tag. Requires a build flag — see below. |
+| **.NET** | `Ahp.Core.Verified` 0.1.0 | Artifact built — self-contained `net8.0` assembly, no external dependencies. Released on GitHub; registry publish pending credentials. |
+| **JavaScript** | `@open-agency/ahp` 0.1.0 | Artifact built, smoke test **148/148** green. Released on GitHub; registry publish pending credentials. |
+| **Python** | `agent-host-protocol` 0.1.0 | Wheel + sdist built, smoke test **148/148** green. Released on GitHub; registry publish pending credentials. |
+| **Go** | `github.com/joshmouch/ahp-verified/go` | Builds and runs the corpus **148/148** green. Tagged `go/v0.1.0`. Requires a build flag — see below. |
 | **JVM** | `agency.open.ahp:ahp-core` 0.1.0 | Extracted sources + `pom.xml` present; jar not built in this tree. Compilation needs `-Xmx8g` and is slow by design. |
 | **C++** | — | **Blocked, irreducibly.** Dafny 4.11.0 cannot translate this core: unbounded `int`/`nat` and higher-order types are unsupported by the C++ backend. Bounding integers to `int64` would break the fold proofs. Evidence in `cpp/evidence/`. |
 
@@ -89,7 +89,7 @@ Reproduce everything: `bash gen/check-all.sh`.
 dotnet add package Ahp.Core.Verified          # .NET
 npm install @open-agency/ahp                  # JavaScript
 pip install agent-host-protocol               # Python
-go get github.com/joshmouch/ahp-go            # Go
+go get github.com/joshmouch/ahp-verified/go            # Go
 ```
 
 ```xml
