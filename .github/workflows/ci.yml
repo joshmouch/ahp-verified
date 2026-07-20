@@ -18,8 +18,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
-      - run: cd js && npm ci --ignore-scripts || npm install --ignore-scripts
-      - run: cd js && npm run build && npm test
+      - run: cd js && npm install --ignore-scripts
+      # dist/ahp.cjs is the committed extracted product; CI tests it directly.
+      # Regenerating needs Dafny + a private runtime dep, so CI never rebuilds it.
+      - run: cd js && npm test
   go:
     runs-on: ubuntu-latest
     steps:

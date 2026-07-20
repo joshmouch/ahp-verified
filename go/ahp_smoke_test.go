@@ -13,13 +13,13 @@ package ahp_test
 import (
 	"testing"
 
-	m_AhpSkeleton "github.com/joshmouch/ahp-go/AhpSkeleton"
-	m_Canvas "github.com/joshmouch/ahp-go/Canvas"
-	m_ConfluxCodec "github.com/joshmouch/ahp-go/ConfluxCodec"
-	m_Identity "github.com/joshmouch/ahp-go/ConfluxCommandIdentityCapability"
-	m_ConfluxJsonText "github.com/joshmouch/ahp-go/ConfluxJsonText"
-	m_Terminal "github.com/joshmouch/ahp-go/Terminal"
-	_dafny "github.com/joshmouch/ahp-go/dafny"
+	m_AhpSkeleton "github.com/joshmouch/ahp-verified/go/AhpSkeleton"
+	m_Canvas "github.com/joshmouch/ahp-verified/go/Canvas"
+	m_ConfluxCodec "github.com/joshmouch/ahp-verified/go/ConfluxCodec"
+	m_Identity "github.com/joshmouch/ahp-verified/go/ConfluxCommandIdentityCapability"
+	m_ConfluxJsonText "github.com/joshmouch/ahp-verified/go/ConfluxJsonText"
+	m_Terminal "github.com/joshmouch/ahp-verified/go/Terminal"
+	_dafny "github.com/joshmouch/ahp-verified/go/dafny"
 )
 
 func str(s string) _dafny.Sequence { return _dafny.UnicodeSeqOfUtf8Bytes(s) }

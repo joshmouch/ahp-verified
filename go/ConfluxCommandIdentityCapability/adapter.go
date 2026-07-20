@@ -21,9 +21,9 @@ import (
 
 	"golang.org/x/text/unicode/norm"
 
-	m_ConfluxCodec "github.com/joshmouch/ahp-go/ConfluxCodec"
-	m_ConfluxJsonText "github.com/joshmouch/ahp-go/ConfluxJsonText"
-	_dafny "github.com/joshmouch/ahp-go/dafny"
+	m_ConfluxCodec "github.com/joshmouch/ahp-verified/go/ConfluxCodec"
+	m_ConfluxJsonText "github.com/joshmouch/ahp-verified/go/ConfluxJsonText"
+	_dafny "github.com/joshmouch/ahp-verified/go/dafny"
 )
 
 // CompanionStruct_Default___ supplies the extern module's static members.

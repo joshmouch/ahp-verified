@@ -6,14 +6,14 @@ package ConfluxPrune
 import (
 	os "os"
 
-	m_AhpSkeleton "github.com/joshmouch/ahp-go/AhpSkeleton"
-	m_Canvas "github.com/joshmouch/ahp-go/Canvas"
-	m_ConfluxCodec "github.com/joshmouch/ahp-go/ConfluxCodec"
-	m_ConfluxContract "github.com/joshmouch/ahp-go/ConfluxContract"
-	m_ConfluxOperators "github.com/joshmouch/ahp-go/ConfluxOperators"
-	m_ResourceWatch "github.com/joshmouch/ahp-go/ResourceWatch"
-	m__System "github.com/joshmouch/ahp-go/System_"
-	_dafny "github.com/joshmouch/ahp-go/dafny"
+	m_AhpSkeleton "github.com/joshmouch/ahp-verified/go/AhpSkeleton"
+	m_Canvas "github.com/joshmouch/ahp-verified/go/Canvas"
+	m_ConfluxCodec "github.com/joshmouch/ahp-verified/go/ConfluxCodec"
+	m_ConfluxContract "github.com/joshmouch/ahp-verified/go/ConfluxContract"
+	m_ConfluxOperators "github.com/joshmouch/ahp-verified/go/ConfluxOperators"
+	m_ResourceWatch "github.com/joshmouch/ahp-verified/go/ResourceWatch"
+	m__System "github.com/joshmouch/ahp-verified/go/System_"
+	_dafny "github.com/joshmouch/ahp-verified/go/dafny"
 )
 
 var _ = os.Args

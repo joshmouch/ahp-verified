@@ -6,10 +6,10 @@ package AhpSkeleton
 import (
 	os "os"
 
-	m_ConfluxCodec "github.com/joshmouch/ahp-go/ConfluxCodec"
-	m_ConfluxContract "github.com/joshmouch/ahp-go/ConfluxContract"
-	m__System "github.com/joshmouch/ahp-go/System_"
-	_dafny "github.com/joshmouch/ahp-go/dafny"
+	m_ConfluxCodec "github.com/joshmouch/ahp-verified/go/ConfluxCodec"
+	m_ConfluxContract "github.com/joshmouch/ahp-verified/go/ConfluxContract"
+	m__System "github.com/joshmouch/ahp-verified/go/System_"
+	_dafny "github.com/joshmouch/ahp-verified/go/dafny"
 )
 
 var _ = os.Args

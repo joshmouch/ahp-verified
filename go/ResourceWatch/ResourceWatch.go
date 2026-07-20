@@ -6,11 +6,11 @@ package ResourceWatch
 import (
 	os "os"
 
-	m_AhpSkeleton "github.com/joshmouch/ahp-go/AhpSkeleton"
-	m_ConfluxCodec "github.com/joshmouch/ahp-go/ConfluxCodec"
-	m_ConfluxContract "github.com/joshmouch/ahp-go/ConfluxContract"
-	m__System "github.com/joshmouch/ahp-go/System_"
-	_dafny "github.com/joshmouch/ahp-go/dafny"
+	m_AhpSkeleton "github.com/joshmouch/ahp-verified/go/AhpSkeleton"
+	m_ConfluxCodec "github.com/joshmouch/ahp-verified/go/ConfluxCodec"
+	m_ConfluxContract "github.com/joshmouch/ahp-verified/go/ConfluxContract"
+	m__System "github.com/joshmouch/ahp-verified/go/System_"
+	_dafny "github.com/joshmouch/ahp-verified/go/dafny"
 )
 
 var _ = os.Args

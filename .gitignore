@@ -1,9 +1,8 @@
-# Build outputs — the release artifacts are attached to GitHub Releases, not committed
+# Build intermediates only. The EXTRACTED SOURCE is the product and is committed —
+# CI cannot regenerate it (that needs Dafny plus a private runtime dependency).
 **/bin/
 **/obj/
-**/target/
-**/build/
-**/dist/
+**/target/classes/
 **/node_modules/
 **/.venv*/
 **/__pycache__/
@@ -13,6 +12,4 @@
 *.snupkg
 *.tgz
 *.whl
-*.tar.gz
-*.jar
 .DS_Store

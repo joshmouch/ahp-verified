@@ -207,7 +207,7 @@ namespace ConfluxIoCapability {
       var temporary = target + ".tmp-" + Guid.NewGuid().ToString("N");
       try {
         EnsureDir(target);
-        var bytes = content.Elements.ToArray();
+        var bytes = content.CloneAsArray().ToArray();
         using (var stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None,
             4096, FileOptions.WriteThrough)) {
           stream.Write(bytes, 0, bytes.Length);
@@ -304,7 +304,7 @@ namespace ConfluxIoCapability {
                                   out BigInteger code, out Dafny.ISequence<Rune> outp, out Dafny.ISequence<Rune> err) {
       var psi = new ProcessStartInfo(S(cmd)) { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false };
       var w = S(cwd); if (w.Length > 0) psi.WorkingDirectory = w;
-      foreach (var a in args.Elements) psi.ArgumentList.Add(S(a));
+      foreach (var a in args.CloneAsArray()) psi.ArgumentList.Add(S(a));
       try {
         var pr = Process.Start(psi);
         string o = pr.StandardOutput.ReadToEnd(), e = pr.StandardError.ReadToEnd(); pr.WaitForExit();
@@ -454,7 +454,7 @@ namespace ConfluxIoCapability {
         RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false,
       };
       var w = S(cwd); if (w.Length > 0) psi.WorkingDirectory = w;
-      foreach (var a in args.Elements) psi.ArgumentList.Add(S(a));
+      foreach (var a in args.CloneAsArray()) psi.ArgumentList.Add(S(a));
       using var stdout = new MemoryStream(); using var stderr = new MemoryStream();
       long outputBytes = 0, peakBytes = 0;
       long timeLimit = SaturatingNonNegativeLong(timeLimitMs);
@@ -707,7 +707,7 @@ namespace ConfluxIoCapability {
         RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false,
       };
       var w = S(cwd); if (w.Length > 0) psi.WorkingDirectory = w;
-      foreach (var a in args.Elements) psi.ArgumentList.Add(S(a));
+      foreach (var a in args.CloneAsArray()) psi.ArgumentList.Add(S(a));
       try {
         var pr = Process.Start(psi);
         var entry = new ProcessEntry(pr);

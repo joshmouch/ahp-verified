@@ -4,7 +4,7 @@
 package _System
 
 import (
-	_dafny "github.com/joshmouch/ahp-go/dafny"
+	_dafny "github.com/joshmouch/ahp-verified/go/dafny"
 	os "os"
 )
 

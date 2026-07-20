@@ -23,7 +23,7 @@ import (
 	"strings"
 	"sync"
 
-	_dafny "github.com/joshmouch/ahp-go/dafny"
+	_dafny "github.com/joshmouch/ahp-verified/go/dafny"
 )
 
 // CompanionStruct_Default___ supplies the extern module's static members.

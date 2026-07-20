@@ -6,8 +6,8 @@ package ConfluxCodec
 import (
 	os "os"
 
-	m__System "github.com/joshmouch/ahp-go/System_"
-	_dafny "github.com/joshmouch/ahp-go/dafny"
+	m__System "github.com/joshmouch/ahp-verified/go/System_"
+	_dafny "github.com/joshmouch/ahp-verified/go/dafny"
 )
 
 var _ = os.Args

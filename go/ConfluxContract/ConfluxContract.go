@@ -6,9 +6,9 @@ package ConfluxContract
 import (
 	os "os"
 
-	m_ConfluxCodec "github.com/joshmouch/ahp-go/ConfluxCodec"
-	m__System "github.com/joshmouch/ahp-go/System_"
-	_dafny "github.com/joshmouch/ahp-go/dafny"
+	m_ConfluxCodec "github.com/joshmouch/ahp-verified/go/ConfluxCodec"
+	m__System "github.com/joshmouch/ahp-verified/go/System_"
+	_dafny "github.com/joshmouch/ahp-verified/go/dafny"
 )
 
 var _ = os.Args
