@@ -1,0 +1,9 @@
+### E1: cpp translate, baseline flags (same as proven-working cs invocation)
+$ dafny translate cpp spec/client_main.dfy --no-verify --library <conflux-runtime.doo> -o /tmp/x
+
+Dafny program verifier did not attempt verification
+spec/client_main.dfy(3,0): Error: Feature not supported for this compilation target: Unicode chars
+  |
+3 | include "ahp_skeleton.dfy"
+  | ^^^^^^^
+

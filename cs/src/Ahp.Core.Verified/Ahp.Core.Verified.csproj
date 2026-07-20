@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <Deterministic>true</Deterministic>
+    <!-- Generated code: suppress nullability + unused-variable diagnostics the
+         Dafny C# backend legitimately produces. -->
+    <NoWarn>CS8600;CS8602;CS8603;CS8604;CS8605;CS8618;CS8625;CS8629;CS8714;CS8765;CS8769;CS8981;CS0162;CS0164;CS0168;CS0219;CS0436;CS1717;CS1718;CS0114</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Generated/AhpCore.g.cs" />
+    <Compile Include="Runtime/*.cs" />
+  </ItemGroup>
+
+  <!-- NuGet package metadata -->
+  <PropertyGroup>
+    <PackageId>Ahp.Core.Verified</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Joshua Mouch</Authors>
+    <Company>Joshua Mouch</Company>
+    <Product>Agent Host Protocol — Formally Verified Core</Product>
+    <Title>Agent Host Protocol — Formally Verified Core</Title>
+    <Description>Machine-checked core of the Agent Host Protocol (AHP), extracted from a Dafny specification. Ships the root reducer and the seven AHP channel reducers (session, chat, terminal, changeset, annotations, resourceWatch, canvas), their JSON codecs, and the unified multi-channel dispatch layer. The reducers carry proofs of convergence and fold consistency. The extracted C# passes 148 of 148 modeled fixtures in the AHP reducer corpus; the root reducer and five channels are modeled completely, while session (36 of 61) and chat (54 of 97) are modeled in part. This package contains the verified core only; idiomatic client APIs are provided separately.</Description>
+    <PackageTags>ahp;agent-host-protocol;dafny;formal-verification;verified;protocol;reducer;crdt;convergence</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Copyright>Copyright (c) Microsoft Corporation. Copyright (c) 2026 Josh Mouch.</Copyright>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!-- This package tree is not its own git checkout. Without this, the SDK's
+         implicit SourceLink walks up to an unrelated parent repository and
+         stamps its commit into the nuspec as this package's provenance. -->
+    <SuppressImplicitGitSourceLink>true</SuppressImplicitGitSourceLink>
+    <EnableSourceLink>false</EnableSourceLink>
+    <PublishRepositoryUrl>false</PublishRepositoryUrl>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <None Include="../../LICENSE" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,11 @@
+### E7: package build + smoke test, from the package tree itself
+$ cd /Users/josh/Code/contributions/ahp-release/cpp
+$ g++ -std=c++17 -I vendor -I smoke smoke/probe_ok.cpp -o build/ahp_cpp_toolchain_probe
+exit=0
+$ ./build/ahp_cpp_toolchain_probe
+hello from cpp
+exit=0
+
+NOTE: cmake is not installed on this machine ('cmake not found'), so
+CMakeLists.txt itself is UNVERIFIED. The command above is the exact
+compile+link+run that CMakeLists.txt encodes, executed directly.

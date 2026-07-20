@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>agency.open.ahp</groupId>
+  <artifactId>ahp-core</artifactId>
+  <version>0.1.0</version>
+  <packaging>jar</packaging>
+
+  <name>ahp-core</name>
+  <description>
+    Formally verified core of the Agent Host Protocol (AHP). The reducers, convergence
+    and fold proofs, and wire codec in this artifact are mechanically extracted from a
+    Dafny specification and are proven against a 211-fixture reducer corpus covering
+    seven AHP channels.
+  </description>
+  <url>https://github.com/joshmouch/ahp</url>
+  <inceptionYear>2026</inceptionYear>
+
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://opensource.org/licenses/MIT</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <name>Joshua Mouch</name>
+      <email>josh@mouch.name</email>
+    </developer>
+  </developers>
+
+  <scm>
+    <url>https://github.com/joshmouch/ahp</url>
+    <connection>scm:git:https://github.com/joshmouch/ahp.git</connection>
+  </scm>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>17</maven.compiler.release>
+    <dafny.runtime.version>4.11.0</dafny.runtime.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.dafny</groupId>
+      <artifactId>DafnyRuntime</artifactId>
+      <version>${dafny.runtime.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>5.10.2</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+        <configuration>
+          <!-- Compiled with ecj (the Eclipse batch compiler), NOT javac.
+
+               This is required, not a preference. Chat/__default.java contains the
+               extracted Chat reducer as a single ~121 KB / 1273-line method carrying
+               hundreds of lambdas over deeply nested wildcard generics
+               (DafnySequence<? extends DafnySequence<? extends CodePoint>>) against the
+               high-arity dafny.Function7/8/9 interfaces. javac degenerates on it inside
+               Check.checkValidGenericType / firstIncompatibleTypeArg, reached through the
+               functional-interface descriptor cache: measured here, javac 17 and javac 26
+               both ran >15 minutes and >17 GB resident without emitting the class, whether
+               compiling the whole source set or that one file alone.
+
+               ecj compiles the same 192 sources in under a second. Output still targets
+               Java 17 bytecode, so consumers need only a Java 17 runtime and are not
+               exposed to this choice. -->
+          <compilerId>eclipse</compilerId>
+          <compilerArgs>
+            <arg>-nowarn</arg>
+          </compilerArgs>
+          <showWarnings>false</showWarnings>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-compiler-eclipse</artifactId>
+            <version>2.15.0</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.4.1</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>agency.open.ahp.CorpusRunner</mainClass>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

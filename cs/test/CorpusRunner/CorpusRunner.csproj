@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <IsPackable>false</IsPackable>
+    <RollForward>Major</RollForward>
+    <NoWarn>CS8600;CS8602;CS8603;CS8604;CS8605;CS8618;CS8625;CS8629;CS8714;CS8765;CS8769;CS8981;CS0162;CS0164;CS0168;CS0219;CS0436;CS1717;CS1718;CS0114;CS0618</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="CorpusRunner.cs" />
+    <Compile Include="../../src/Ahp.Core.Verified/Runtime/*.cs" />
+  </ItemGroup>
+
+</Project>

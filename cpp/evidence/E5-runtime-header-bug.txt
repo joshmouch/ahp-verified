@@ -1,0 +1,11 @@
+### E5: Dafny 4.11.0 DafnyRuntime.h is broken for ALL cpp programs (upstream bug)
+$ g++ -std=c++17 -I $(brew --prefix dafny)/libexec/DafnyRuntimeCpp -c out_ok.cpp
+In file included from out_ok.cpp:2:
+/opt/homebrew/opt/dafny/libexec/DafnyRuntimeCpp/DafnyRuntime.h:550:23: error: no member named 'find' in 'DafnySet<T>'
+  550 |             if (other.find(elt) != other.set.end()) {
+      |                 ~~~~~ ^
+1 error generated.
+
+Reproduced identically on g++ -std=c++14/17/20 and clang++ -std=c++17.
+Root cause: DafnySet<T>::disjoint() calls other.find(elt); DafnySet<T> has no find member.
+Fix: other.set.find(elt)  -- see vendor/DafnyRuntime.h.patch

@@ -1,0 +1,6 @@
+### E6: with the PATCHED runtime header, Dafny cpp output compiles, links, and RUNS
+$ dafny translate cpp probe_ok.dfy --no-verify --unicode-char false -o out_ok
+$ g++ -std=c++17 -I vendor/ out_ok.cpp -o hello_cpp
+$ ./hello_cpp
+hello from cpp
+(exit 0 -- toolchain proven functional; remaining blockers are language-level, not toolchain)

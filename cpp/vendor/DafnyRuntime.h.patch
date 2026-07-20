@@ -1,0 +1,32 @@
+Fix DafnySet<T>::disjoint() calling a non-existent member
+
+The C++ runtime header shipped with Dafny 4.11.0 does not compile. Any
+program translated with `dafny translate cpp` fails at the first include,
+because DafnySet<T>::disjoint() calls other.find(elt), and DafnySet<T>
+exposes no find member -- the underlying std::set is the member `set`.
+
+Every sibling method in the same class already goes through `.set`
+(contains() uses set.find(t), Union() uses ret.set.insert(...)), so this
+is a plain omission rather than a design difference.
+
+Reproduced on Dafny 4.11.0 (Homebrew) with g++ -std=c++14, -std=c++17,
+-std=c++20 and clang++ -std=c++17, all giving:
+
+    DafnyRuntime.h:550:23: error: no member named 'find' in 'DafnySet<T>'
+      550 |             if (other.find(elt) != other.set.end()) {
+          |                 ~~~~~ ^
+
+With this one-token fix applied, a translated "hello world" compiles,
+links, and runs.
+
+--- a/DafnyRuntime.h
++++ b/DafnyRuntime.h
+@@ -547,7 +547,7 @@
+
+     bool disjoint(const DafnySet<T>& other) {
+         for (auto const& elt:set) {
+-            if (other.find(elt) != other.set.end()) {
++            if (other.set.find(elt) != other.set.end()) {
+                 return false;
+             }
+         }

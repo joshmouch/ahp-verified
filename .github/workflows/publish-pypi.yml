@@ -1,0 +1,16 @@
+name: Publish PyPI
+# Uses Trusted Publishing (OIDC) — configure the publisher on PyPI for this repo/workflow.
+on:
+  push: { tags: ['py/v[0-9]+.[0-9]+.[0-9]+'] }
+permissions: { contents: read, id-token: write }
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: cd py && python -m pip install build && python -m build
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with: { packages-dir: py/dist }

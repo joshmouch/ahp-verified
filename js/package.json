@@ -1,0 +1,45 @@
+{
+  "name": "@open-agency/ahp",
+  "version": "0.1.0",
+  "description": "Formally-verified Agent Host Protocol (AHP) channel reducers, extracted from a machine-checked Dafny core.",
+  "keywords": [
+    "ahp",
+    "agent-host-protocol",
+    "formal-verification",
+    "dafny",
+    "reducer",
+    "protocol"
+  ],
+  "license": "MIT",
+  "author": "Joshua Mouch <josh@mouch.name>",
+  "homepage": "https://github.com/joshmouch/ahp-js#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joshmouch/ahp-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/joshmouch/ahp-js/issues"
+  },
+  "main": "dist/ahp.cjs",
+  "exports": {
+    ".": {
+      "require": "./dist/ahp.cjs",
+      "default": "./dist/ahp.cjs"
+    }
+  },
+  "files": [
+    "dist/ahp.cjs",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "bignumber.js": "^9.3.1"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node test/smoke.cjs"
+  }
+}

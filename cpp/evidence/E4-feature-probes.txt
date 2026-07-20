@@ -1,0 +1,22 @@
+### E4: minimal feature probes isolating the irreducible blockers
+
+--- E4a: BigInteger (int/nat) in a datatype ---
+$ dafny translate cpp probe_int.dfy --no-verify --unicode-char false
+
+Dafny program verifier did not attempt verification
+probe_int.dfy(2,25): Error: Feature not supported for this compilation target: Unbounded integers
+  |
+2 |   datatype Thing = Thing(id: int, count: nat)
+  |                          ^^
+
+probe_int.dfy(2,34): Error: Feature not supported for this compilation target: Unbounded integers
+  |
+2 |   datatype Thing = Thing(id: int, count: nat)
+  |                                   ^^^^^
+
+
+--- E4b: higher-order function with BOUNDED ints (isolates arrow types from BigInteger) ---
+$ dafny translate cpp probe_ho32.dfy --no-verify --unicode-char false
+
+Dafny program verifier did not attempt verification
+(0,-1): Error: UserDefinedTypeName _#Func1

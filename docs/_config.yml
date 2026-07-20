@@ -1,0 +1,14 @@
+# GitHub Pages — plain static passthrough.
+# No Jekyll theme, no layouts, no Liquid processing. index.html serves as authored.
+theme: null
+plugins: []
+
+# Nothing here needs Liquid rendering; keep Jekyll's hands off the HTML.
+exclude:
+  - README.md
+include:
+  - _config.yml
+
+# Site metadata (unused by the static page, present for tooling that reads it).
+title: AHP Verified
+description: A formally verified implementation of the Microsoft Agent Host Protocol, written in Dafny and machine-extracted to multiple languages.

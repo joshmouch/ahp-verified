@@ -1,0 +1,191 @@
+file_format_version = "1.0"
+dafny_version = "4.11.0.0"
+[options_by_module.ConfluxCodec]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxContract]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.AhpSkeleton]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ResourceWatch]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.Canvas]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxOperators]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxPrune]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxSeqRoute]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.Changeset]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.Annotations]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.Terminal]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.Session]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxOrderedLog]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.Chat]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ClientMain]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxSemanticGraphIdentity]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxContentAddress]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxSemanticGraphContract]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxResourceCeilings]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxSupervisedOperationResult]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxTree]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxMerge]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxRoute]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxMapValues]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxDelimited]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxFixpoint]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxGenericCodec]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxResolve]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxWatermark]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxStateMachine]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxProduct]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxJoin]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxDedupe]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxBatchRoute]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxSeqRouteMerge]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxKeyedOps]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxFilterKeys]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxChannel]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxDurableHistory]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxCommand]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxChannelManifest]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxConvergence]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxBudgetConvergence]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxExtern]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxCommandIdentityCapability]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxCommandIdentityExtern]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxDecimalText]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxJsonText]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxCommandIdentity]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxIoCapability]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxIoFfi]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxResourceSupervisor]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxSocketCapability]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxSocketFfi]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxWebSocketCapability]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxWebSocketFfi]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxHttpCapability]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxHttpFfi]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxServiceLifecycle]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxSequence]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxJsonRpc]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxHttpService]
+legacy-module-names = false
+rust-sync = false
+[options_by_module.ConfluxContentLength]
+legacy-module-names = false
+rust-sync = false

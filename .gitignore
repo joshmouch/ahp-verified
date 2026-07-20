@@ -1,0 +1,18 @@
+# Build outputs — the release artifacts are attached to GitHub Releases, not committed
+**/bin/
+**/obj/
+**/target/
+**/build/
+**/dist/
+**/node_modules/
+**/.venv*/
+**/__pycache__/
+**/*.pyc
+**/.build/
+*.nupkg
+*.snupkg
+*.tgz
+*.whl
+*.tar.gz
+*.jar
+.DS_Store

@@ -1,0 +1,19 @@
+### E3: library-free core module (spec/version.dfy) — no library needed, still fails
+$ dafny translate cpp spec/version.dfy --no-verify --unicode-char false
+
+Dafny program verifier did not attempt verification
+spec/version.dfy(49,11): Error: Feature not supported for this compilation target: Unbounded integers
+   |
+49 |   function compareSemVer(a: SemVer, b: SemVer): int
+   |            ^^^^^^^^^^^^^
+
+spec/version.dfy(49,11): Error: Feature not supported for this compilation target: Unbounded integers
+   |
+49 |   function compareSemVer(a: SemVer, b: SemVer): int
+   |            ^^^^^^^^^^^^^
+
+spec/version.dfy(51,39): Error: Feature not supported for this compilation target: Non-native numeric newtypes
+   |
+51 |     if a.major != b.major then a.major - b.major
+   |                                        ^
+
