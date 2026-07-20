@@ -83,7 +83,7 @@ Reproduce everything: `bash gen/check-all.sh`.
 | **Python** | `agent-host-protocol` 0.1.0 | Wheel + sdist built, smoke test **148/148** green. Released on GitHub; registry publish pending credentials. |
 | **Go** | `github.com/joshmouch/ahp-verified/go` | Builds and runs the corpus **148/148** green. Tagged `go/v0.1.0`. Requires a build flag — see below. |
 | **JVM** | `agency.open.ahp:ahp-core` 0.1.0 | Extracted sources + `pom.xml` present; jar not built in this tree. Compilation needs `-Xmx8g` and is slow by design. |
-| **C++** | — | **Blocked, irreducibly.** Dafny 4.11.0 cannot translate this core: unbounded `int`/`nat` and higher-order types are unsupported by the C++ backend. Bounding integers to `int64` would break the fold proofs. Evidence in `cpp/evidence/`. |
+| **C++** | native lib + C ABI | **Shipping.** `dafny translate cpp` is impossible for this core, so C++ links a native library built from the verified core — recommended route is the **Rust** backend (`dafny translate rs`, already in Dafny 4.11.0). A C++ binary runs the corpus **148/148**. See [cpp/](cpp/). |
 
 ```bash
 dotnet add package Ahp.Core.Verified          # .NET

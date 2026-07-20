@@ -1,0 +1,30 @@
+# Package config for the installed AHP verified core.
+#
+# Downstream use:
+#     find_package(ahp_verified REQUIRED)
+#     target_link_libraries(my_app PRIVATE ahp::verified)
+#
+# Copyright (c) Microsoft Corporation
+# Copyright (c) 2026 Josh Mouch
+# SPDX-License-Identifier: MIT
+
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(Threads)
+
+set_and_check(AHP_VERIFIED_INCLUDE_DIR "@PACKAGE_CMAKE_INSTALL_INCLUDEDIR@")
+set_and_check(AHP_VERIFIED_LIB_DIR "@PACKAGE_CMAKE_INSTALL_LIBDIR@")
+
+if(NOT TARGET ahp::verified)
+  add_library(ahp::verified STATIC IMPORTED)
+  set_target_properties(ahp::verified PROPERTIES
+    IMPORTED_LOCATION "${AHP_VERIFIED_LIB_DIR}/libahpverified.a"
+    INTERFACE_INCLUDE_DIRECTORIES "${AHP_VERIFIED_INCLUDE_DIR}")
+  target_link_libraries(ahp::verified INTERFACE Threads::Threads)
+  if(NOT APPLE AND UNIX)
+    target_link_libraries(ahp::verified INTERFACE ${CMAKE_DL_LIBS} resolv)
+  endif()
+endif()
+
+check_required_components(ahp_verified)

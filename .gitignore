@@ -13,3 +13,10 @@
 *.tgz
 *.whl
 .DS_Store
+# C++ route build outputs (regenerable via each route's regenerate.sh / build.sh)
+cpp-via-*/build/
+cpp-via-*/build-cmake/
+cpp-via-*/lib/*.a
+cpp-via-*/lib/*.dylib
+cpp-via-*/**/target/
+cpp-via-*/toolchain/

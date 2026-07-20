@@ -1,0 +1,9 @@
+# Build outputs
+build/
+build-cmake/
+ahp-core-ffi/target/
+
+# Side-by-side Dafny nightly used only for the backend-capability investigation
+# (see evidence/03-nightly-cpp-and-rs.txt). ~55 MB; re-download with:
+#   gh release download nightly --repo dafny-lang/dafny --pattern '<asset>.zip'
+toolchain/

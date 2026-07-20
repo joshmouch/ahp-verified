@@ -1,0 +1,18 @@
+# Route C evidence — newer Dafny (nightly 4.11.1+368adac, built 2026-07-07)
+# Stable latest = 4.11.0. Nightly is the newest Dafny that exists.
+
+$ ./toolchain/dafny/dafny --version
+4.11.1+368adac6150e6a3825fe2f605dca71353badc779
+
+### Q1: does the newer C++ backend support the core? ###
+$ dafny translate cpp spec/version.dfy   (simplest dependency-free module)
+/tmp/version_probe.dfy(29,0): Error: Feature not supported for this compilation target: Unicode chars
+
+$ dafny translate cpp spec/version.dfy --unicode-char:false   (peel layer 1)
+/tmp/version_probe.dfy(49,11): Error: Feature not supported for this compilation target: Unbounded integers
+/tmp/version_probe.dfy(49,11): Error: Feature not supported for this compilation target: Unbounded integers
+/tmp/version_probe.dfy(51,39): Error: Feature not supported for this compilation target: Non-native numeric newtypes
+
+### Q2: does the newer Rust backend relax --enforce-determinism? ###
+$ dafny translate rs spec/version.dfy   (no flag)
+(0,-1): Error: Unsupported Invalid Operation: The Rust compiler requires `--enforce-determinism`

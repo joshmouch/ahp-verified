@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Deterministic>true</Deterministic>
+
+    <!-- NativeAOT: emit a native shared library with a C ABI. -->
+    <PublishAot>true</PublishAot>
+    <NativeLib>Shared</NativeLib>
+    <RuntimeIdentifier>osx-arm64</RuntimeIdentifier>
+
+    <!-- Produce libahp_core.dylib so that `clang++ -lahp_core` resolves. -->
+    <AssemblyName>libahp_core</AssemblyName>
+
+    <!-- Trim/AOT diagnostics: fail the build if the verified core or this
+         binding introduces a reflection/dynamic dependency AOT cannot honour,
+         rather than silently degrading at run time. -->
+    <TrimmerSingleWarn>false</TrimmerSingleWarn>
+    <IlcTreatWarningsAsErrors>true</IlcTreatWarningsAsErrors>
+
+    <!-- The Dafny C# backend legitimately emits these. -->
+    <NoWarn>CS8600;CS8602;CS8603;CS8604;CS8618;CS8625;CS0162;CS0168;CS0219;CS0436</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="AhpNative.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference
+      Include="../../cs/src/Ahp.Core.Verified/Ahp.Core.Verified.csproj" />
+  </ItemGroup>
+
+</Project>

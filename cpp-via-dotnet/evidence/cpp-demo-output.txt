@@ -1,0 +1,42 @@
+AHP verified core — C++ consumer demo
+=====================================
+library: ahp-core-verified 0.1.0 (nativeaot/osx-arm64)
+
+[1] ahp_apply_json — decode + applyAhp
+  PASS  initial state encodes                          (len=603)
+  PASS  apply returns a state                          (ok)
+  PASS  reduced state carries cols 120                 (found "cols":120)
+  PASS  reduced state carries rows 40                  (found "rows":40)
+
+[2] malformed JSON is rejected
+  PASS  bad action JSON returns NULL                   (action_json is not well-formed JSON)
+
+[3] ahp_action_roundtrip_json — codec identity
+  PASS  canonical action round-trips byte-identically  ({"cols":120,"rows":40,"type":"terminal/resized"})
+  PASS  key order is canonicalised                     ({"cols":120,"rows":40,"type":"terminal/resized"})
+  PASS  round trip is idempotent                       ({"cols":120,"rows":40,"type":"terminal/resized"})
+  PASS  terminal/titleChanged round-trips              ({"title":"build","type":"terminal/titleChanged"})
+
+[4] ahp_action_channel — dispatch routing
+  PASS  terminal                                       (routed to terminal)
+  PASS  chat                                           (routed to chat)
+  PASS  canvas                                         (routed to canvas)
+  PASS  root/unknown                                   (routed to root/unknown)
+
+[5] ahp_fold_json — foldAhp over a sequence
+  PASS  fold returns a state                           (ok)
+  PASS  folded title is "build"                        (title present)
+  PASS  folded cwd is "/src"                           (cwd present)
+  PASS  folded cols survived later actions             (cols 120 retained)
+
+[6] handle API — successive applyAhp equals foldAhp
+  PASS  state handle allocated                         (handle=1)
+  PASS  all four actions applied                       (4/4)
+  PASS  stepwise state equals folded state             (byte-identical)
+  PASS  ahp_state_equals agrees                        (ahp_state_equals=1)
+
+[7] reducer determinism
+  PASS  folding the same input twice is identical      (byte-identical)
+
+=====================================
+DEMO OK — all assertions passed.

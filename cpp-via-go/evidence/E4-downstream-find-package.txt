@@ -1,0 +1,23 @@
+$ cmake -S examples/downstream -B /tmp/downstream2 -DCMAKE_PREFIX_PATH=/tmp/ahpinstall
+-- The CXX compiler identification is AppleClang 21.0.0.21000101
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- Configuring done (0.3s)
+-- Generating done (0.0s)
+-- Build files have been written to: /tmp/downstream2
+
+$ cmake --build /tmp/downstream2
+[ 50%] Building CXX object CMakeFiles/consumer.dir/main.cpp.o
+[100%] Linking CXX executable consumer
+[100%] Built target consumer
+
+$ /tmp/downstream2/consumer
+title=Shipped activity=None availability=Stale outcome=Applied
+downstream consumer OK
+exit status: 0

@@ -1,0 +1,17 @@
+[package]
+name = "ahp_core_ffi"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "C ABI over the formally-verified AHP core, extracted from Dafny to Rust."
+
+[lib]
+name = "ahp_core"
+crate-type = ["staticlib", "cdylib", "rlib"]
+path = "src/lib.rs"
+
+[dependencies]
+dafny_runtime = { path = "dafny_runtime" }
+
+[profile.release]
+panic = "abort"

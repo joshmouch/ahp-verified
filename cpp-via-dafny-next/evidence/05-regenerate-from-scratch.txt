@@ -1,0 +1,129 @@
+==> dafny: 4.11.0
+==> extracting conflux runtime source from conflux-runtime.doo
+==> applying determinism rewrite
+patched: ConfluxJsonText.SortedKeySetRuntime -> LeastKeyOf (1 of 1 compiled assign-such-that)
+==> re-verifying patched runtime (this is the proof the rewrite is sound)
+build/stage/conflux-runtime.dfy(916,72): Warning: unusual indentation in left-hand operand of ==> (which starts at line 915, column 6); do you perhaps need parentheses?
+    |
+916 |     !result.observation.peakDescendantRssMb.status.MeasurementComplete? ==>
+    |                                                                         ^^^
+
+build/stage/conflux-runtime.dfy(920,72): Warning: unusual indentation in left-hand operand of ==> (which starts at line 919, column 6); do you perhaps need parentheses?
+    |
+920 |     !result.observation.combinedOutputBytes.status.MeasurementComplete? ==>
+    |                                                                         ^^^
+
+build/stage/conflux-runtime.dfy(1564,4): Warning: unusual indentation in else branch of if-then-else (which ends at line 1569, column 61); do you perhaps need parentheses?
+     |
+1564 |     if next == S then
+     |     ^^
+
+build/stage/conflux-runtime.dfy(1671,4): Warning: unusual indentation in else branch of if-then-else (which ends at line 1676, column 98); do you perhaps need parentheses?
+     |
+1671 |     if f == {} then
+     |     ^^
+
+build/stage/conflux-runtime.dfy(6766,58): Warning: unusual indentation in left-hand operand of ==> (which starts at line 6765, column 9); do you perhaps need parentheses?
+     |
+6766 |         (b in s && (forall y :: y in s ==> !StrLt(y, b))) ==> a == b
+     |                                                           ^^^
+
+
+Dafny program verifier finished with 1623 verified, 0 errors
+==> translating core to Rust
+build/stage/conflux-runtime.dfy(916,72): Warning: unusual indentation in left-hand operand of ==> (which starts at line 915, column 6); do you perhaps need parentheses?
+    |
+916 |     !result.observation.peakDescendantRssMb.status.MeasurementComplete? ==>
+    |                                                                         ^^^
+
+build/stage/conflux-runtime.dfy(920,72): Warning: unusual indentation in left-hand operand of ==> (which starts at line 919, column 6); do you perhaps need parentheses?
+    |
+920 |     !result.observation.combinedOutputBytes.status.MeasurementComplete? ==>
+    |                                                                         ^^^
+
+build/stage/conflux-runtime.dfy(1564,4): Warning: unusual indentation in else branch of if-then-else (which ends at line 1569, column 61); do you perhaps need parentheses?
+     |
+1564 |     if next == S then
+     |     ^^
+
+build/stage/conflux-runtime.dfy(1671,4): Warning: unusual indentation in else branch of if-then-else (which ends at line 1676, column 98); do you perhaps need parentheses?
+     |
+1671 |     if f == {} then
+     |     ^^
+
+build/stage/conflux-runtime.dfy(6766,58): Warning: unusual indentation in left-hand operand of ==> (which starts at line 6765, column 9); do you perhaps need parentheses?
+     |
+6766 |         (b in s && (forall y :: y in s ==> !StrLt(y, b))) ==> a == b
+     |                                                           ^^^
+
+
+Dafny program verifier did not attempt verification
+==> staging generated Rust into ahp-core-ffi
+    moved 3 inner attribute(s) to lib.rs
+==> building native library
+   Compiling autocfg v1.5.1
+   Compiling either v1.16.0
+   Compiling once_cell v1.21.4
+   Compiling itertools v0.14.0
+   Compiling num-traits v0.2.19
+   Compiling num-integer v0.1.46
+   Compiling num-complex v0.4.6
+   Compiling num-bigint v0.4.8
+   Compiling num-iter v0.1.46
+   Compiling num-rational v0.4.2
+   Compiling num v0.4.3
+   Compiling dafny_runtime v0.1.0 (/Users/josh/Code/contributions/ahp-release/cpp-via-dafny-next/ahp-core-ffi/dafny_runtime)
+   Compiling ahp_core_ffi v0.1.0 (/Users/josh/Code/contributions/ahp-release/cpp-via-dafny-next/ahp-core-ffi)
+    Finished `release` profile [optimized] target(s) in 7.18s
+==> building + running the C++ test program
+AHP verified core -- C++ calling the Terminal channel reducer
+============================================================
+
+initial state (Dafny Terminal.T0()):
+  ok   title == "bash"
+  ok   cwd is None (NULL, not empty string)
+  ok   exitCode is None
+  ok   content is empty
+
+single transitions (verified reducer apply1):
+  ok   cwdChanged("/tmp")            -> cwd == "/tmp"
+  ok   titleChanged("zsh")           -> title == "zsh"
+  ok   resized(120, 40)              -> cols == 120, rows == 40
+  ok   exited(130)                   -> exitCode == 130
+
+purity (reducer returns a new state; inputs untouched):
+  ok   s0 still "bash" after s2 became "zsh"
+  ok   s3 exitCode still None after s4 exited(130)
+
+kernel fold (higher-order Terminal.fold over ConfluxContract.Fold):
+  ok   fold over 3 data actions returned a state
+  ok   fold(s0, [3 actions]) content_len == apply1 x3 content_len (1 == 1)
+
+boundary behaviour:
+  ok   NULL state handle             -> NULL
+  ok   NULL string argument          -> NULL
+
+============================================================
+ALL CHECKS PASSED -- C++ successfully drove the verified AHP reducer.
+
+==> building + running the full conformance corpus
+AHP verified core -- conformance corpus, driven from C++
+=======================================================
+
+ROOT CORPUS:          7/7 green against extracted code
+RESOURCEWATCH CORPUS: 2/2 green against extracted code
+CANVAS CORPUS:        5/5 green against extracted code
+CHANGESET CORPUS:     15/15 green against extracted code
+ANNOTATIONS CORPUS:   10/10 green against extracted code
+TERMINAL CORPUS:      19/19 green against extracted code
+SESSION CORPUS:       36/36 modeled green (of 61 total; all ~25 action TYPES now modeled)
+CHAT CORPUS:          54/54 modeled green (of 97 total; full tool-call state machine + turn lifecycle modeled)
+TOTAL: 148/148 corpus fixtures green (5 full AHP channels + session/chat partial)
+MULTI-CHANNEL CLIENT OK — extract(cs,js) + corpus all green
+
+ahp_run_corpus() returned 0
+
+==> done
+    static lib : /Users/josh/Code/contributions/ahp-release/cpp-via-dafny-next/ahp-core-ffi/target/release/libahp_core.a
+    shared lib : /Users/josh/Code/contributions/ahp-release/cpp-via-dafny-next/ahp-core-ffi/target/release/libahp_core.dylib
+    header     : /Users/josh/Code/contributions/ahp-release/cpp-via-dafny-next/include/ahp_core.h

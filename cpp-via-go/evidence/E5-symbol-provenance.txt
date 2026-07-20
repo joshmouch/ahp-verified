@@ -1,0 +1,35 @@
+# Provenance: the archive contains the Dafny-extracted packages themselves,
+# not a reimplementation. The exported C symbols are the only hand-written code.
+
+$ nm lib/libahpverified.a | grep -c "ahp-verified/go"
+1050
+
+# The verified reducer the C++ example reaches:
+$ nm lib/libahpverified.a | grep "Canvas.(\*CompanionStruct_Default___).ApplyToCanvas$"
+00000000000c4460 t _github.com/joshmouch/ahp-verified/go/Canvas.(*CompanionStruct_Default___).ApplyToCanvas
+
+# The other verified entry points reached through the C ABI:
+$ nm lib/libahpverified.a | grep -E "(Session\..*RunCorpus|ConfluxJsonText\..*(Stringify|ParseJsonChecked)|CommandIdentityCapability\..*Sha256Digest)$"
+00000000000e8fc0 t _github.com/joshmouch/ahp-verified/go/ConfluxCommandIdentityCapability.(*CompanionStruct_Default___).Sha256Digest
+00000000000e6c10 t _github.com/joshmouch/ahp-verified/go/ConfluxJsonText.(*CompanionStruct_Default___).ParseJsonChecked
+00000000000e8300 t _github.com/joshmouch/ahp-verified/go/ConfluxJsonText.(*CompanionStruct_Default___).Stringify
+00000000000d0ac0 t _github.com/joshmouch/ahp-verified/go/Session.(*CompanionStruct_Default___).RunCorpus
+
+# The complete hand-written C surface — 16 exported symbols, all marshalling shells:
+$ nm -gU lib/libahpverified.a | grep -E "^[0-9a-f]+ T _ahp_" | sort
+0000000000000000 T _ahp_abi_version
+0000000000000050 T _ahp_string_free
+00000000000000a0 T _ahp_run_corpus
+0000000000000104 T _ahp_json_canonicalize
+0000000000000158 T _ahp_sha256_digest
+00000000000001c0 T _ahp_canvas_new
+0000000000000224 T _ahp_canvas_apply_updated
+00000000000002bc T _ahp_canvas_apply_close_requested
+0000000000000324 T _ahp_canvas_id
+0000000000000378 T _ahp_canvas_provider_id
+00000000000003cc T _ahp_canvas_title
+0000000000000420 T _ahp_canvas_activity
+0000000000000474 T _ahp_canvas_content_uri
+00000000000004c8 T _ahp_canvas_availability
+000000000000051c T _ahp_canvas_equals
+0000000000000580 T _ahp_canvas_release

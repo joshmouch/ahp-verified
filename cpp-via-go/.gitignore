@@ -1,0 +1,8 @@
+# Build products of regenerate.sh. The bridge source, the public header and the
+# example are the product and are committed; the native binaries are not — any
+# checkout with a Go toolchain reproduces them with ./regenerate.sh, and
+# CMakeLists.txt runs that automatically when lib/ is empty.
+lib/*.a
+lib/*.dylib
+lib/*.so
+build/

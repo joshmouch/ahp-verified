@@ -1,0 +1,73 @@
+
+== Checking the toolchain
+go version go1.26.5 darwin/arm64
+Apple clang version 21.0.0 (clang-2100.1.1.101)
+
+== Building the static archive (c-archive)
+
+== Building the shared library (c-shared)
+
+== Verifying include/ahp_verified.h matches the generated ABI
+16 exported symbols agree
+
+== Compiling the C++ example
+
+== Running the C++ example
+AHP verified core — C++ client via the Go c-archive bridge
+binding ABI version 1.0.0
+
+[1] Canvas reducer (Canvas.ApplyToCanvas)
+    initial : canvasId=canvas-1 title=None activity=None contentUri=None availability=Ready
+    ok    a fresh canvas carries no title
+    Updated : canvasId=canvas-1 title=Design Review activity=editing contentUri=ahp-session:/2f9c/content/canvas-1 availability=Ready
+    outcome: Applied
+    ok    Updated set the title
+    ok    Updated set the activity
+    ok    Updated reports Applied
+    ok    an unchanged availability is preserved
+    ok    the reducer left its input state untouched
+    degraded: canvasId=canvas-1 title=Design Review activity=editing contentUri=ahp-session:/2f9c/content/canvas-1 availability=Stale
+    ok    a sparse update preserved the title
+    ok    a sparse update degraded availability to Stale
+    CloseRequested outcome: NoOp
+    ok    CloseRequested reports NoOp
+    ok    CloseRequested preserved the state
+
+[2] JSON codec (ConfluxJsonText.ParseJsonChecked / Stringify)
+    input:     {"seq": 42, "channel":"canvas"}
+    canonical: {"channel":"canvas","seq":42}
+    ok    well-formed JSON was accepted
+    ok    canonicalization is idempotent
+    ok    malformed JSON was refused
+
+[3] Command identity (ConfluxCommandIdentity.Sha256Digest)
+    digest("abc") = sha256:ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+    ok    digest matches the published SHA-256 test vector
+
+[4] Embedded corpus (Session.RunCorpus)
+    corpus: 36/36 modeled cases passed
+    ok    the corpus reported a non-empty modeled-case count
+    ok    every modeled corpus case passed
+
+ALL CHECKS PASSED (0 failures)
+
+== Artifacts
+/Users/josh/Code/contributions/ahp-release/cpp-via-go/build:
+total 5880
+drwxr-xr-x@  3 josh  agent-shared       96 Jul 20 01:21 .
+drwxr-xr-x@ 14 josh  agent-shared      448 Jul 20 01:21 ..
+-rwxr-xr-x@  1 josh  agent-shared  3008056 Jul 20 01:21 ahp_demo
+
+/Users/josh/Code/contributions/ahp-release/cpp-via-go/include:
+total 24
+drwxr-xr-x@  4 josh  agent-shared   128 Jul 20 01:21 .
+drwxr-xr-x@ 14 josh  agent-shared   448 Jul 20 01:21 ..
+-rw-r--r--@  1 josh  agent-shared  7338 Jul 20 01:20 ahp_verified.h
+-rw-r--r--@  1 josh  staff         3015 Jul 20 01:21 libahpverified.h
+
+/Users/josh/Code/contributions/ahp-release/cpp-via-go/lib:
+total 16768
+drwxr-xr-x@  4 josh  agent-shared      128 Jul 20 01:21 .
+drwxr-xr-x@ 14 josh  agent-shared      448 Jul 20 01:21 ..
+-rw-r--r--@  1 josh  staff         5917496 Jul 20 01:21 libahpverified.a
+-rw-r--r--@  1 josh  staff         2663602 Jul 20 01:21 libahpverified.dylib

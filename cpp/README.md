@@ -1,226 +1,99 @@
-# AHP verified core — C++ target
+# C++ — the verified core, reachable from C++
 
-**Status: BLOCKED. The AHP Dafny core cannot be translated to C++ by Dafny 4.11.0.**
+**Status: shipping.** A C++ program can call the proven AHP reducers.
 
-This is not a "we ran out of time" result and not a packaging gap. Two of the
-blockers found here were fixable and *were* fixed; the remaining two are
-properties of the Dafny C++ backend that no flag, entry point, or workaround
-reaches. This document records exactly how far the chain got and where it stops,
-with the real command output for each claim under [`evidence/`](evidence/).
+Getting here took a detour worth explaining, because the obvious route is a dead end.
 
-No C++ package is published. The locked distribution matrix assigns no C++
-coordinate, and inventing one for an artifact that does not exist would be worse
-than shipping nothing.
+## `dafny translate cpp` does not work, and will not
 
-## Summary
+Dafny's C++ backend is experimental and cannot express this core. Three independent blockers,
+each fatal on its own:
 
-| # | Blocker | Verdict | Evidence |
-|---|---|---|---|
-| 1 | `--unicode-char` default rejects cpp | **FIXED** — pass `--unicode-char false` | [E1](evidence/E1-translate-default.txt) |
-| 2 | `DafnyRuntime.h` does not compile (upstream bug) | **FIXED** — one-token patch, [`vendor/DafnyRuntime.h.patch`](vendor/DafnyRuntime.h.patch) | [E5](evidence/E5-runtime-header-bug.txt), [E6](evidence/E6-patched-runtime-works.txt) |
-| 3 | Unbounded integers (`int` / `nat`) unsupported | **IRREDUCIBLE** | [E3](evidence/E3-version-unbounded-int.txt), [E4](evidence/E4-feature-probes.txt) |
-| 4 | Arrow / higher-order types unsupported | **IRREDUCIBLE** | [E4](evidence/E4-feature-probes.txt) |
-| 5 | Every shipped `.doo` library is built `--unicode-char true` | **IRREDUCIBLE** (catch-22 with #1) | [E2](evidence/E2-library-unicode-conflict.txt) |
+| Blocker | Why it is fatal here |
+|---|---|
+| No unbounded `int`/`nat` | The protocol datatypes carry 60 `: int` and 47 `nat` fields — timestamps, terminal dimensions, exit codes, the fold clock |
+| No higher-order functions | The reducer core is built on them: 26 arrow signatures, including functions that return functions |
+| No `Std.JSON` | The codec routes through it, and it is itself unbounded-int and higher-order heavy |
 
-Feature census of the core, which is what makes #3 and #4 fatal rather than
-inconvenient: **60** `: int` annotations, **47** `nat`, **26** arrow (`->`)
-signatures, and JSON codec (`Wire.`) use in 8 of 10 spec modules.
+Demonstrated on `spec/version.dfy` — the simplest module in the core, which imports nothing, so
+no library or entry-point choice can rescue it. Bounding every `int` to `int64` would compile,
+but it would delete the unbounded arithmetic the convergence and fold proofs rest on. The binary
+would build and would no longer be the verified core.
 
-## Baseline: the invocation is correct
+This was re-checked against the newest Dafny in existence (nightly `4.11.1+368adac`, 2026-07-07),
+not merely assumed from the stable release — same three errors, same order. The full analysis,
+with raw command output for every claim, is in [DAFNY-CPP-BACKEND.md](DAFNY-CPP-BACKEND.md).
 
-Before blaming the backend, the same command shape was proven against the C#
-backend, which is one of the two proven-extracting targets:
+That investigation also produced a fix worth upstreaming independently: Dafny 4.11.0's shipped
+`DafnyRuntime.h` does not compile at all (`DafnySet<T>::disjoint` calls a nonexistent `find`).
+A patch is in [`DafnyRuntime.h.patch`](vendor/DafnyRuntime.h.patch).
 
-```
-$ dafny translate cs spec/client_main.dfy --no-verify \
-    --library .conflux/runtime/dependencies/conflux-runtime/current/conflux-runtime.doo \
-    -o /tmp/ahp-cs-baseline
+## What ships instead
 
-Dafny program verifier did not attempt verification
--rw-r--r--  1009723  /tmp/ahp-cs-baseline.cs
-```
+The core extracts cleanly to several languages that *can* emit a native library with a C ABI.
+C++ links that library. **The code deciding protocol behavior is still machine-derived from the
+proofs** — no reducer was reimplemented in C++.
 
-1,009,723 bytes of C#. So the library path, the flags, and the entry point are
-all right; swapping `cs` for `cpp` is the only change in what follows.
+Three routes were built. All three work, each producing a native library, a C header, and a
+compiled C++ program that calls real reducers.
 
-**Library used:** `.conflux/runtime/dependencies/conflux-runtime/current/conflux-runtime.doo`
-— the generic build. There is no `conflux-runtime-cpp.doo`; a repo-wide search
-for `*.doo` found per-target variants only for `js`, so the generic one is the
-correct and only choice for this target.
+### Recommended — [`../cpp-via-dafny-next/`](../cpp-via-dafny-next/), via the Rust backend
 
-## Blocker 1 — Unicode chars (FIXED)
+The strongest route, and a genuine surprise: **`dafny translate rs` already exists in Dafny
+4.11.0**, and the Rust backend supports both features that kill the C++ one — unbounded integers
+(`num::BigInt`) and function values (`Rc<dyn Fn>`).
 
-```
-$ dafny translate cpp spec/client_main.dfy --no-verify --library <conflux-runtime.doo> -o /tmp/x
-spec/client_main.dfy(3,0): Error: Feature not supported for this compilation target: Unicode chars
-```
+- 43,946 lines of Rust emitted from the verified core; all 8 channel reducers present
+- `libahp_core.a` (10.8 MB) / `libahp_core.dylib` (1.7 MB), 16 exported `ahp_*` C symbols
+- **A C++ binary runs the core's own conformance corpus: 148/148 green, all 8 channels**
 
-Dafny 4.x defaults `--unicode-char true`; the C++ backend requires the legacy
-char model. Passing `--unicode-char false` clears this error. That fix is
-carried through every command below.
+It is a direct Dafny backend, so the chain is one compiler shorter than the alternatives.
 
-## Blocker 2 — the shipped C++ runtime header does not compile (FIXED)
+One source change was required, and it is *re-proven* rather than asserted: the Rust backend
+mandates `--enforce-determinism`, which bans the assign-such-that statement. The single compiled
+occurrence in the runtime — a JSON key-sort helper; no reducer was touched — was lifted to the
+let-such-that expression form carrying an identical predicate, with uniqueness discharged by the
+runtime's own pre-existing lemma. `regenerate.sh` re-verifies the entire patched runtime
+(**1623 verified, 0 errors**) before it will translate, so the artifact cannot be rebuilt without
+re-proving the rewrite.
 
-This one is worth stating plainly, because it means **no Dafny program at all,
-of any complexity, compiles to a working C++ binary on a stock Dafny 4.11.0
-install.** Even a hello-world:
+### Alternate — [`../cpp-via-go/`](../cpp-via-go/), via Go `c-archive`
 
-```
-$ g++ -std=c++17 -I $(brew --prefix dafny)/libexec/DafnyRuntimeCpp -c out_ok.cpp
-DafnyRuntime.h:550:23: error: no member named 'find' in 'DafnySet<T>'
-  550 |             if (other.find(elt) != other.set.end()) {
-      |                 ~~~~~ ^
-```
+Unedited `dafny translate go` output plus a ~200-line cgo bridge, built with
+`-buildmode=c-archive`. Ships a static archive and a shared library, with the hand-written
+const-correct header gated against cgo ABI drift on every build.
 
-Identical on `g++ -std=c++14/17/20` and `clang++ -std=c++17`. `DafnySet<T>`
-wraps a `std::set` member named `set`; every sibling method goes through it
-(`contains()` calls `set.find(t)`), so `disjoint()` calling `other.find(elt)` is
-a plain omission. The fix is `other.set.find(elt)` — see
-[`vendor/DafnyRuntime.h.patch`](vendor/DafnyRuntime.h.patch), which is a genuine
-upstream bug fix independent of AHP.
+### Alternate — [`../cpp-via-dotnet/`](../cpp-via-dotnet/), via .NET NativeAOT
 
-With the patched header vendored here, translation → compile → link → run works:
+The extracted C# published as a native shared library with `[UnmanagedCallersOnly]` entry points.
+Two notable results: the Dafny C# backend emits **fully AOT-compatible code** (zero trim or
+reflection warnings under `IlcTreatWarningsAsErrors`), and the resulting `.dylib` has **zero .NET
+runtime dependencies**. It doubles as a cross-host check — CLR/JIT and NativeAOT produce
+byte-identical reducer results.
 
-```
-$ g++ -std=c++17 -I vendor -I smoke smoke/probe_ok.cpp -o build/ahp_cpp_toolchain_probe
-exit=0
-$ ./build/ahp_cpp_toolchain_probe
-hello from cpp
-exit=0
-```
+## The trust chain, stated plainly
 
-**The toolchain is therefore proven functional.** Everything that fails from
-here fails on language features, not on environment.
+**Machine-derived from the proofs:** every reducer, the kernel fold, the codecs, and the JSON
+parser/writer. Nothing was hand-ported.
 
-## Blocker 3 — unbounded integers (IRREDUCIBLE)
+**Hand-written and therefore not verified:** the FFI binding layer (marshalling, handle table,
+error mapping), the C header, and the example programs. These contain no protocol logic — each
+binding function converts in, calls a verified function, and converts out — but a marshalling or
+lifetime bug there is excluded by no proof.
 
-`int` and `nat` are hard-rejected:
+**Outside the proofs entirely,** as in every language binding: the Dafny backend itself, the host
+toolchain, and the `{:extern}` host-capability boundary (filesystem, process, clock, sockets).
+The reducers are pure and never call those, which is why the corpus runs green regardless.
 
-```
-$ dafny translate cpp probe_int.dfy --no-verify --unicode-char false
-probe_int.dfy(2,25): Error: Feature not supported for this compilation target: Unbounded integers
-  |
-2 |   datatype Thing = Thing(id: int, count: nat)
-  |                          ^^
-```
+In one sentence: *the reducers are proven; the binding around them is not.*
 
-The sharpest demonstration is `spec/version.dfy` — the *simplest* module in the
-core, a SemVer registry, and one of the few that imports nothing at all, so the
-library question does not even arise:
+## Coverage and limits
 
-```
-$ dafny translate cpp spec/version.dfy --no-verify --unicode-char false
-spec/version.dfy(49,11): Error: Feature not supported for this compilation target: Unbounded integers
-   |
-49 |   function compareSemVer(a: SemVer, b: SemVer): int
-spec/version.dfy(51,39): Error: Feature not supported for this compilation target: Non-native numeric newtypes
-   |
-51 |     if a.major != b.major then a.major - b.major
-```
+The core models the root reducer and five channels completely; session (36 of 61 actions) and
+chat (54 of 97) are modeled in part. Unmodeled actions are **not** rejected — they decode to a
+defined `RootUnknown` catch-all, and the binding exposes this so a caller can detect them rather
+than silently treating them as no-ops.
 
-If the easiest, dependency-free module in the core cannot cross, no amount of
-entry-point selection helps.
-
-**Why substituting bounded ints is not a workaround.** The `nat` typing is not
-incidental; it carries the proof. `version.dfy`'s own header states that
-`MAJOR.MINOR.PATCH` well-formedness "is a LANGUAGE GUARANTEE here, not a regex:
-`SemVer` carries three `nat` components by construction". Replacing `nat` with
-`i32` deletes the property the verification exists to establish. A C++ artifact
-obtained that way would compile while no longer being the verified core — which
-is the only thing this release is for.
-
-## Blocker 4 — higher-order functions (IRREDUCIBLE)
-
-Independent of the integer problem. With deliberately bounded (`i32`) types, so
-that BigInteger cannot be the cause:
-
-```
-$ dafny translate cpp probe_ho32.dfy --no-verify --unicode-char false
-(0,-1): Error: UserDefinedTypeName _#Func1
-```
-
-The backend cannot name the arrow type at all. The core has 26 arrow signatures;
-the fold/reducer architecture is built on them.
-
-## Blocker 5 — the library catch-22 (IRREDUCIBLE)
-
-Blocker 1's fix collides with the dependency:
-
-```
-$ dafny translate cpp spec/client_main.dfy --no-verify --unicode-char false --library <conflux-runtime.doo>
-CLI: Error: cannot load .../conflux-runtime.doo:
-  --unicode-char is set locally to False, but the library was built with True
-```
-
-The core genuinely needs it — dropping `--library` yields `module ConfluxCodec
-does not exist`, plus the same for `ConfluxContract`, `ConfluxOperators`,
-`ConfluxOrderedLog`, and `ConfluxSeqRoute`. The identical conflict blocks
-`DafnyStandardLibraries.doo`, so **Std.JSON is unreachable from C++ too**:
-
-```
-CLI: Error: cannot load /DafnyStandardLibraries.doo:
-  --unicode-char is set locally to False, but the library was built with True
-```
-
-So: C++ requires `--unicode-char false`, and every shipped `.doo` on the machine
-is built with `true`. Rebuilding `conflux-runtime` from source with
-`--unicode-char false` would not rescue this — blockers 3 and 4 are demonstrated
-on library-free code and would still stand.
-
-## What is in this directory
-
-```
-CMakeLists.txt      Build manifest. Builds the toolchain probe, NOT the AHP core.
-LICENSE             MIT, dual copyright (Microsoft Corporation; Josh Mouch).
-vendor/
-  DafnyRuntime.h        Patched Dafny 4.11.0 C++ runtime header.
-  DafnyRuntime.h.patch  The upstream fix, as a standalone patch.
-smoke/
-  probe_ok.dfy      Toolchain probe source; translates + compiles + runs.
-  probe_ok.cpp/.h   Its emitted C++.
-  probe_int.dfy     Minimal repro of blocker 3.
-  probe_ho32.dfy    Minimal repro of blocker 4.
-evidence/           Raw captured output, E1-E7.
-```
-
-## Reproducing
-
-```
-cd <core>/agent-host-protocol-core-dafny
-LIB=.conflux/runtime/dependencies/conflux-runtime/current/conflux-runtime.doo
-
-dafny translate cpp spec/client_main.dfy --no-verify --library $LIB -o /tmp/x   # blocker 1
-dafny translate cpp spec/client_main.dfy --no-verify --unicode-char false \
-      --library $LIB -o /tmp/x                                                  # blocker 5
-dafny translate cpp spec/version.dfy --no-verify --unicode-char false -o /tmp/x # blocker 3
-```
-
-## Honest limitations of this report
-
-- **`CMakeLists.txt` is unverified.** `cmake` is not installed on this machine
-  (`cmake not found`). The compile+link+run it encodes was executed directly
-  with `g++` and passes ([E7](evidence/E7-package-build.txt)), but CMake itself
-  has not been run.
-- **The smoke test exercises the toolchain, not AHP.** It proves a Dafny-emitted
-  C++ binary runs; it does not exercise a reducer, because no AHP reducer can be
-  emitted. Claiming otherwise would misrepresent what was built.
-- **No attempt was made to rebuild `conflux-runtime` from source** with
-  `--unicode-char false`. That path was assessed and abandoned as pointless
-  rather than attempted: blockers 3 and 4 are demonstrated on code that uses no
-  library at all, so a rebuilt library cannot change the outcome. This is a
-  reasoned skip, not a completed experiment.
-
-## Conclusion
-
-C++ is blocked by the Dafny 4.11.0 backend's lack of unbounded integers and
-arrow types. Both are load-bearing in the AHP core, and both are load-bearing
-*because of the verification* rather than by stylistic accident — `nat` is what
-makes well-formedness a language guarantee, and arrow types are what the fold
-architecture is made of. Any C++ artifact produced by stripping them would
-compile without being the verified core.
-
-The two fixable blockers were fixed, and the runtime-header patch is worth
-upstreaming on its own merits, since it currently breaks the C++ backend for
-every Dafny user. Revisit C++ if a future Dafny release adds BigInteger and
-first-class function support to the backend; `CMakeLists.txt` is the harness the
-real core would drop into.
+Only `osx-arm64` was built and tested. The C ABI and the C++ sources are portable and the
+underlying toolchains support Linux and Windows, but those are *expected to work*, not
+demonstrated.

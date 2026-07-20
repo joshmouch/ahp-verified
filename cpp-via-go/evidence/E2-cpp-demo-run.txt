@@ -1,0 +1,40 @@
+$ ./build/ahp_demo
+AHP verified core — C++ client via the Go c-archive bridge
+binding ABI version 1.0.0
+
+[1] Canvas reducer (Canvas.ApplyToCanvas)
+    initial : canvasId=canvas-1 title=None activity=None contentUri=None availability=Ready
+    ok    a fresh canvas carries no title
+    Updated : canvasId=canvas-1 title=Design Review activity=editing contentUri=ahp-session:/2f9c/content/canvas-1 availability=Ready
+    outcome: Applied
+    ok    Updated set the title
+    ok    Updated set the activity
+    ok    Updated reports Applied
+    ok    an unchanged availability is preserved
+    ok    the reducer left its input state untouched
+    degraded: canvasId=canvas-1 title=Design Review activity=editing contentUri=ahp-session:/2f9c/content/canvas-1 availability=Stale
+    ok    a sparse update preserved the title
+    ok    a sparse update degraded availability to Stale
+    CloseRequested outcome: NoOp
+    ok    CloseRequested reports NoOp
+    ok    CloseRequested preserved the state
+
+[2] JSON codec (ConfluxJsonText.ParseJsonChecked / Stringify)
+    input:     {"seq": 42, "channel":"canvas"}
+    canonical: {"channel":"canvas","seq":42}
+    ok    well-formed JSON was accepted
+    ok    canonicalization is idempotent
+    ok    malformed JSON was refused
+
+[3] Command identity (ConfluxCommandIdentity.Sha256Digest)
+    digest("abc") = sha256:ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+    ok    digest matches the published SHA-256 test vector
+
+[4] Embedded corpus (Session.RunCorpus)
+    corpus: 36/36 modeled cases passed
+    ok    the corpus reported a non-empty modeled-case count
+    ok    every modeled corpus case passed
+
+ALL CHECKS PASSED (0 failures)
+
+exit status: 0

@@ -1,0 +1,36 @@
+$ cmake -S . -B /tmp/ahpbuild -DCMAKE_INSTALL_PREFIX=/tmp/ahpinstall
+-- The CXX compiler identification is AppleClang 21.0.0.21000101
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- Configuring done (0.3s)
+-- Generating done (0.0s)
+-- Build files have been written to: /tmp/ahpbuild
+
+$ cmake --build /tmp/ahpbuild
+[ 50%] Building CXX object CMakeFiles/ahp_demo.dir/examples/ahp_demo.cpp.o
+[100%] Linking CXX executable ahp_demo
+[100%] Built target ahp_demo
+
+$ ctest --test-dir /tmp/ahpbuild --output-on-failure
+Test project /tmp/ahpbuild
+    Start 1: ahp_demo
+1/1 Test #1: ahp_demo .........................   Passed    0.19 sec
+
+100% tests passed out of 1
+
+Total Test time (real) =   0.20 sec
+
+$ cmake --install /tmp/ahpbuild
+-- Install configuration: ""
+-- Installing: /tmp/ahpinstall/include/ahp_verified.h
+-- Installing: /tmp/ahpinstall/include/libahpverified.h
+-- Installing: /tmp/ahpinstall/lib/libahpverified.a
+-- Installing: /tmp/ahpinstall/lib/libahpverified.dylib
+-- Installing: /tmp/ahpinstall/lib/cmake/ahp_verified/ahp_verifiedConfig.cmake
+-- Installing: /tmp/ahpinstall/lib/cmake/ahp_verified/ahp_verifiedConfigVersion.cmake
