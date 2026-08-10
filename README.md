@@ -105,6 +105,7 @@ The first checks the pinned corpus and runs it through the extracted code in fou
 | **JavaScript** | `@open-agency/ahp` 0.1.0 | Artifact built, smoke test **148/148** green. Released on GitHub; registry publish pending credentials. |
 | **Python** | `agent-host-protocol` 0.1.0 | Wheel + sdist built, smoke test **148/148** green. Released on GitHub; registry publish pending credentials. |
 | **Go** | `github.com/joshmouch/ahp-verified/go` | Builds and runs the corpus **148/148** green. Tagged `go/v0.1.0`. Requires a build flag — see below. |
+| **Rust** | `ahp-verified` (crates.io) | Idiomatic crate — the extraction target *is* Rust, so no FFI and no `unsafe` in the hand-written layer. `cargo test` green. See [rust/](rust/). |
 | **JVM** | `agency.open.ahp:ahp-core` 0.1.0 | Extracted sources + `pom.xml` present; jar not built in this tree. Compilation needs `-Xmx8g` and is slow by design. |
 | **C++** | native lib + C ABI | **Prototype — not recommended for production.** `dafny translate cpp` is impossible for this core, so C++ links a native library built from the verified core. A C++ binary runs the corpus **148/148** single-threaded. The FFI layer is hand-written, unverified, and **the Rust-backed route has confirmed memory-safety defects under concurrent use** (see [docs/ffi-safety.md](docs/ffi-safety.md)). Only the Go-backed route is exercised in CI. See [cpp/](cpp/). |
 

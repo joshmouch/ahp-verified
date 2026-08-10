@@ -1,85 +1,262 @@
 name: CI
+
 on:
   push: { branches: [main] }
   pull_request: { branches: [main] }
+
 permissions: { contents: read }
+
+# Every `run:` step uses bash on all three operating systems (Git Bash supplies it
+# on the Windows runners). This is the single largest portability lever in this
+# file: it makes globs, `&&` chaining, forward-slash paths, and `$VAR` expansion
+# behave identically everywhere, instead of silently switching to PowerShell
+# semantics on windows-latest.
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  # ---------------------------------------------------------------------------
+  # C# — the extracted core plus both runners (smoke + full corpus).
+  # ---------------------------------------------------------------------------
   csharp:
-    runs-on: ubuntu-latest
+    name: cs (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with: { dotnet-version: '8.0.x' }
-      - run: dotnet build cs/src/Ahp.Core.Verified/Ahp.Core.Verified.csproj -c Release -warnaserror
-      - run: dotnet run --project cs/test/Ahp.Core.Verified.SmokeTest -c Release
-      # The smoke test exercises the API surface; CorpusRunner replays the embedded
-      # 148-fixture corpus through the extracted reducers. Assert the total explicitly
-      # so a shrunken corpus fails instead of printing a smaller green number.
-      - name: corpus 148/148 against the extracted C# code
-        run: |
-          dotnet run --project cs/test/CorpusRunner -c Release | tee /tmp/cs-corpus.txt
-          grep -q 'TOTAL: 148/148 corpus fixtures green' /tmp/cs-corpus.txt
-          grep -q 'MULTI-CHANNEL CLIENT OK' /tmp/cs-corpus.txt
+      - name: Build (warnings are errors)
+        run: dotnet build cs/src/Ahp.Core.Verified/Ahp.Core.Verified.csproj -c Release -warnaserror
+      - name: Smoke test
+        run: dotnet run --project cs/test/Ahp.Core.Verified.SmokeTest -c Release
+      # The corpus runner is the stronger signal and was previously not run in CI.
+      - name: Conformance corpus
+        run: dotnet run --project cs/test/CorpusRunner -c Release
+
+  # ---------------------------------------------------------------------------
+  # JavaScript — dist/ahp.cjs is the committed extracted product; CI tests it
+  # directly. Regenerating needs Dafny plus a private runtime dep, so CI never
+  # rebuilds it. node 18 is the floor declared in package.json `engines`.
+  # ---------------------------------------------------------------------------
   javascript:
-    runs-on: ubuntu-latest
+    name: js (${{ matrix.os }}, node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: ['18', '22']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: '20' }
-      - run: cd js && npm install --ignore-scripts
-      # dist/ahp.cjs is the committed extracted product; CI tests it directly.
-      # Regenerating needs Dafny + a private runtime dep, so CI never rebuilds it.
-      - run: cd js && npm test
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: js/package-lock.json
+      # `npm ci` (not `npm install`): the lockfile is committed, so this is the
+      # reproducible install and it fails loudly if the lockfile drifts.
+      - name: Install
+        working-directory: js
+        run: npm ci --ignore-scripts
+      - name: Smoke test + corpus
+        working-directory: js
+        run: npm test
+
+  # ---------------------------------------------------------------------------
+  # Go — two traps, both load-bearing. See go/BUILDING.md.
+  #
+  # 1. `go-version-file` reads go/go.mod instead of hardcoding a number, and
+  #    GOTOOLCHAIN=local forbids the silent toolchain download that otherwise
+  #    makes the declared version a fiction.
+  # 2. `-gcflags=all=-l` — note `all=`. The extracted Chat package defeats the
+  #    Go inliner; compiling it with inlining on peaks at ~72-90 GiB RSS and is
+  #    OOM-killed. Bare `-gcflags=-l` only covers packages NAMED on the command
+  #    line, so it survives `./...` by luck and dies on `./cmd/ahp`, where Chat
+  #    is a dependency. `all=` covers dependencies too.
+  # ---------------------------------------------------------------------------
   go:
-    runs-on: ubuntu-latest
+    name: go (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    env:
+      GOTOOLCHAIN: local
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
-        with: { go-version: '1.24' }
-      # -p=1 -gcflags=-l: the extracted Chat reducer OOMs the inliner otherwise. See go/BUILDING.md
-      - run: cd go && go build -p=1 -gcflags=-l ./... && go test -p=1 -gcflags=-l ./...
-      # `go test` alone asserts nothing here — the extracted packages carry no _test.go
-      # files, so it reports "no test files" for every package and exits 0. Run the
-      # corpus binary and require the exact 148/148 line, so this job actually fails
-      # when the extracted reducers stop agreeing with the corpus.
-      - name: corpus 148/148 against the extracted Go code
-        run: |
-          cd go
-          go run -gcflags=all=-l ./cmd/ahp | tee /tmp/go-corpus.txt
-          grep -q 'TOTAL: 148/148 corpus fixtures green' /tmp/go-corpus.txt
-          grep -q 'MULTI-CHANNEL CLIENT OK' /tmp/go-corpus.txt
+        with:
+          go-version-file: go/go.mod
+          cache-dependency-path: go/go.sum
+      - name: Report toolchain actually in use
+        working-directory: go
+        run: go version && go env GOTOOLCHAIN
+      - name: Build all packages
+        working-directory: go
+        run: go build -p=1 -gcflags=all=-l ./...
+      - name: Test
+        working-directory: go
+        run: go test -p=1 -gcflags=all=-l ./...
+      # Consumer-shaped build: Chat is a transitive dependency here, not a named
+      # package. This is the case that OOMs under bare `-gcflags=-l`, and it is
+      # what a downstream `go build ./cmd/...` looks like.
+      - name: Build the command binary (dependency-inlining regression guard)
+        working-directory: go
+        run: go build -p=1 -gcflags=all=-l -o "${{ runner.temp }}/ahp-cli" ./cmd/ahp
+
+  # ---------------------------------------------------------------------------
+  # Python — the wheel is py3-none-any (pure Python, no platform tag).
+  #
+  # Two Windows traps avoided: `pip install dist/*.whl` is not glob-expanded by
+  # pip itself (only by the shell, and PowerShell would not do it), and `/tmp`
+  # does not exist. `--find-links` resolves the wheel by name, and the import
+  # check runs from ${{ runner.temp }} so it cannot accidentally pick up ./src.
+  # ---------------------------------------------------------------------------
   python:
-    runs-on: ubuntu-latest
+    name: py (${{ matrix.os }}, py ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ['3.9', '3.12']
+        exclude:
+          # macos-latest is arm64 and actions/setup-python publishes no 3.9
+          # build for it. 3.9 is still covered on ubuntu and windows, which is
+          # what the `requires-python = ">=3.9"` floor in pyproject.toml needs.
+          - os: macos-latest
+            python: '3.9'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
-      - run: cd py && python -m pip install build && python -m build && python -m pip install dist/*.whl
-      # check_corpus() pins every per-channel denominator and the 148 total, so an
-      # empty or shrunken result fails. The previous `assert all(p==t for p,t in
-      # r.values())` was vacuously true on an empty dict and also passed on (0,0) pairs.
-      - run: cd /tmp && python -c "import agent_host_protocol as a; r=a.check_corpus(); print(r); print('corpus', sum(t for _, t in r.values()), '/', a.CORPUS_TOTAL)"
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Build wheel
+        working-directory: py
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build
+      - name: Install the built wheel (no glob, no index)
+        working-directory: py
+        run: python -m pip install --no-index --find-links dist agent-host-protocol
+      - name: Run the corpus from outside the source tree
+        working-directory: ${{ runner.temp }}
+        run: |
+          python -c "
+          import pathlib
+          import agent_host_protocol as a
+          print('loaded from:', pathlib.Path(a.__file__).parent)
+          r = a.run_corpus()
+          for name, (passed, total) in sorted(r.items()):
+              print(f'  {name:<16} {passed}/{total}')
+          assert all(p == t for p, t in r.values()), r
+          print('corpus OK —', sum(t for _, t in r.values()), 'fixtures green')
+          "
+
+  # ---------------------------------------------------------------------------
+  # Java — compiled with ecj (the Eclipse batch compiler), not javac; see the
+  # comment in java/pom.xml for why that is required rather than preferred. ecj
+  # ships as a jar, so the choice is platform-independent. Java 17 is the
+  # `maven.compiler.release` floor and is tested alongside 21.
+  # ---------------------------------------------------------------------------
   java:
-    runs-on: ubuntu-latest
+    name: java (${{ matrix.os }}, jdk ${{ matrix.java }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        java: ['17', '21']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
-        with: { distribution: 'temurin', java-version: '21' }
-      - run: cd java && mvn -B -q package
-  cpp:
-    # Builds the C ABI + C++ demo through the Go backend (cpp-via-go). This route
-    # needs only Go and clang++ — no Dafny, no private dependency — so it is the
-    # only C++ route that can run in public CI, and it is what backs the C++ row
-    # in the README packages table.
-    #
-    # NOT covered here: the cpp-via-dafny-next (Rust) route. It is excluded on
-    # purpose — its FFI layer has known memory-safety defects under concurrent
-    # use (see docs/ffi-safety.md). Do not promote C++ status on the strength of
-    # this job alone; it proves the Go-backed route builds and its corpus slice
-    # runs, single-threaded.
-    runs-on: ubuntu-latest
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: maven
+      - name: Package (compiles + runs the JUnit suite)
+        working-directory: java
+        run: mvn -B --no-transfer-progress package
+
+  # ---------------------------------------------------------------------------
+  # Native C++ via the Dafny Rust backend.
+  #
+  # This job needs NO Dafny: `dafny translate rs` output is committed at
+  # cpp-via-dafny-next/ahp-core-ffi/src/ahpcore.rs, so CI compiles the generated
+  # Rust with cargo, links it into C++ through the C ABI, and runs both the
+  # terminal demo and the full conformance corpus under ctest.
+  #
+  # Windows is deliberately absent: CMakeLists.txt passes `-Wall -Wextra`, which
+  # MSVC does not accept. See PORTABILITY.md and patches/cmake-msvc-and-linklibs.patch.
+  # ---------------------------------------------------------------------------
+  cpp-native:
+    name: cpp-native (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with: { go-version: '1.24' }
-      - run: cd cpp-via-go && bash regenerate.sh
+      # No rust-toolchain action: the GitHub-hosted ubuntu and macos images
+      # already ship rustup/cargo/rustc, and keeping the action list to
+      # first-party actions/* keeps the supply chain narrow.
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            cpp-via-dafny-next/ahp-core-ffi/target
+          key: cargo-${{ matrix.os }}-${{ hashFiles('cpp-via-dafny-next/ahp-core-ffi/Cargo.lock') }}
+          restore-keys: cargo-${{ matrix.os }}-
+      - name: Report toolchain
+        run: cargo --version && cmake --version | head -1 && clang++ --version | head -1
+      # Record the exact platform link line rustc says the staticlib needs, so a
+      # future libc/toolchain change that adds a dependency is visible in the log
+      # rather than only as a link failure.
+      - name: Report the native link line rustc requires
+        working-directory: cpp-via-dafny-next
+        run: |
+          cargo rustc --release --manifest-path ahp-core-ffi/Cargo.toml \
+            --crate-type staticlib -- --print native-static-libs 2>&1 \
+            | grep -F 'native-static-libs' || true
+      - name: Configure
+        working-directory: cpp-via-dafny-next
+        env:
+          CC: clang
+          CXX: clang++
+        run: cmake -S . -B build-cmake -DCMAKE_BUILD_TYPE=Release
+      - name: Build (cargo staticlib + C++ demo + C++ corpus)
+        working-directory: cpp-via-dafny-next
+        run: cmake --build build-cmake
+      - name: Verify the shipped artifacts exist
+        working-directory: cpp-via-dafny-next
+        run: |
+          ls -l ahp-core-ffi/target/release/libahp_core.a
+          ls -l include/ahp_core.h
+      - name: ctest (terminal reducer + full conformance corpus)
+        working-directory: cpp-via-dafny-next
+        run: ctest --test-dir build-cmake --output-on-failure
+
+  rust:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    defaults: { run: { shell: bash } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cd rust && cargo test --release

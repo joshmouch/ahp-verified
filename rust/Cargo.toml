@@ -1,0 +1,32 @@
+[package]
+name = "ahp-verified"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+license = "MIT"
+authors = ["Joshua Mouch <josh@mouch.name>"]
+description = "Formally verified Agent Host Protocol channel reducers, machine-extracted from a proven Dafny core."
+documentation = "https://docs.rs/ahp-verified"
+repository = "https://github.com/joshmouch/ahp-verified"
+homepage = "https://joshmouch.github.io/ahp-verified/"
+readme = "README.md"
+keywords = ["ahp", "formal-verification", "dafny", "protocol", "agent"]
+categories = ["network-programming", "data-structures", "api-bindings"]
+exclude = ["build/", "evidence/"]
+
+[dependencies]
+# Dependencies of the vendored Dafny runtime (src/generated/dafny_runtime).
+# The runtime is vendored rather than taken from crates.io because the
+# published `dafny-runtime` crate is a third-party vendoring at a version that
+# does not correspond to the Dafny 4.11.0 code generator used here.
+once_cell = "1.21.3"
+num = "0.4.3"
+itertools = "0.14.0"
+
+# Lints live in src/lib.rs rather than here: `unsafe_code` and `missing_docs`
+# are denied for the hand-written layer but must be allowed on the two
+# machine-generated modules, and only an attribute on the module declaration
+# can express that split.
+
+[package.metadata.docs.rs]
+all-features = true
