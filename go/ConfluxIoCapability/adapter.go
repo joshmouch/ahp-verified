@@ -22,7 +22,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	_dafny "github.com/joshmouch/ahp-verified/go/dafny"
@@ -95,7 +94,7 @@ func (_static *CompanionStruct_Default___) SpawnProcess(cwd, cmdName, args _dafn
 	if dir := text(cwd); dir != "" {
 		c.Dir = dir
 	}
-	c.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	platformSetpgid(c)
 	pr, pw, err := os.Pipe()
 	if err != nil {
 		return _dafny.IntOfInt64(-1)
@@ -160,8 +159,7 @@ func killTree(p *managedProc) {
 	if p.cmd.Process == nil {
 		return
 	}
-	if pgid, err := syscall.Getpgid(p.cmd.Process.Pid); err == nil {
-		_ = syscall.Kill(-pgid, syscall.SIGKILL)
+	if platformKillGroup(p.cmd.Process.Pid) {
 		return
 	}
 	_ = p.cmd.Process.Kill()
@@ -353,7 +351,7 @@ func (_static *CompanionStruct_Default___) RunProcessBounded(
 	if dir := text(cwd); dir != "" {
 		c.Dir = dir
 	}
-	c.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	platformSetpgid(c)
 	pr, pw, err := os.Pipe()
 	if err != nil {
 		return failedBounded(err.Error())
@@ -478,8 +476,7 @@ func killProcessGroup(c *exec.Cmd) {
 	if c.Process == nil {
 		return
 	}
-	if pgid, err := syscall.Getpgid(c.Process.Pid); err == nil {
-		_ = syscall.Kill(-pgid, syscall.SIGKILL)
+	if platformKillGroup(c.Process.Pid) {
 		return
 	}
 	_ = c.Process.Kill()
