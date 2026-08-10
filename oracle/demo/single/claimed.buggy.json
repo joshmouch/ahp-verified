@@ -1,0 +1,8 @@
+{
+  "provider": "copilot",
+  "title": "Test Session",
+  "status": 1,
+  "lifecycle": "ready",
+  "activeClients": [],
+  "chats": []
+}

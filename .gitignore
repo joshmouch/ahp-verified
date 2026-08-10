@@ -25,3 +25,9 @@ cpp-via-*/toolchain/
 _work/
 _work2/
 _work3/
+# oracle build outputs (regenerable via oracle/build.sh)
+oracle/dist/
+oracle/**/bin/
+oracle/**/obj/
+oracle/demo/mutants/
+oracle/demo/*.manifest.json

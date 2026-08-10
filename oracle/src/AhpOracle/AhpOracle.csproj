@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>ahp-oracle</AssemblyName>
+    <RootNamespace>AhpOracle</RootNamespace>
+    <Deterministic>true</Deterministic>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- Target net8.0 to match the verified core, but run on whatever modern
+         runtime the machine actually has. Without this the tool refuses to start
+         on a box that ships only .NET 9/10. -->
+    <RollForward>LatestMajor</RollForward>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <!-- Single-file publish targets; harmless when publishing framework-dependent. -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>false</SelfContained>
+    <SuppressImplicitGitSourceLink>true</SuppressImplicitGitSourceLink>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The oracle is a THIN host over the verified core. It adds no reducer
+         logic of its own: every state transition below comes from the extracted
+         Dafny in this project reference. -->
+    <ProjectReference Include="../../../cs/src/Ahp.Core.Verified/Ahp.Core.Verified.csproj" />
+  </ItemGroup>
+
+</Project>
