@@ -41,7 +41,10 @@ const generated = ['core.js', 'client.js', 'runtime.js'].map((name) =>
   readFileSync(join(build, name), 'utf8')
     .replace(/let _module = \(function\(\) \{\n  let \$module = \{\};\n\n  return \$module;\n\}\)\(\); \/\/ end of module _module\n?/g, ''));
 const combined = generated.join('\n');
-for (const required of ['let Version =', 'let Client =', 'let AhpConnection =', 'let AhpConnectionRuntime =']) {
+for (const required of [
+  'let Version =', 'let Client =', 'let AhpConnection =',
+  'let AhpSessionClient =', 'let AhpConnectionRuntime =',
+]) {
   if (!combined.includes(required)) throw new Error(`missing extracted module: ${required}`);
 }
 if (/^let ConfluxRuntime_/m.test(combined)) {

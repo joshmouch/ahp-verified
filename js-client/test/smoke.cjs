@@ -3,7 +3,7 @@ const { spawn } = require('node:child_process');
 const { AhpHostClient, verified } = require('..');
 
 async function main() {
-  for (const name of ['AhpConnection', 'AhpConnectionRuntime', 'Client', 'Version']) {
+  for (const name of ['AhpConnection', 'AhpConnectionRuntime', 'AhpSessionClient', 'Client', 'Version']) {
     assert.ok(verified[name], `missing extracted module ${name}`);
   }
 
@@ -28,6 +28,7 @@ async function main() {
     assert.equal(turn.text, 'VERIFIED-CLIENT-OK');
     assert.equal(turn.outcome, 'chat/turnComplete');
     assert.deepEqual(observed, ['chat/delta', 'chat/turnComplete']);
+    assert.equal(client.cancel(chat), true);
     client.close();
 
     const standard = new AhpHostClient({ url: 'ws://127.0.0.1:49514' }, 'standard-smoke');
@@ -46,9 +47,12 @@ async function main() {
       (action) => standardObserved.push(action.type),
     );
     assert.equal(standardTurn.text, 'VERIFIED-STANDARD-AHP-OK');
+    assert.equal(standardTurn.reasoning, 'verified-reasoning');
     assert.equal(standardTurn.outcome, 'chat/turnComplete');
-    assert.deepEqual(standardObserved, ['chat/delta', 'chat/turnComplete']);
+    assert.deepEqual(standardObserved, ['chat/delta', 'chat/reasoning', 'chat/turnComplete']);
+    assert.deepEqual(standardTurn.actions.map((action) => action.serverSeq), [1, 2, 3]);
     assert.equal(standardTurn.actions[0].rawAction.content, 'VERIFIED-STANDARD-AHP-OK');
+    assert.equal(standard.cancel(standardChat), true);
     standard.close();
 
     const resumed = new AhpHostClient({ url: 'ws://127.0.0.1:49514' }, 'resume-smoke');
@@ -62,7 +66,7 @@ async function main() {
     server.kill();
   }
 
-  console.log('SMOKE PASSED — extracted connect/request, both turn surfaces, resume, and reconnecting -32005 recovery');
+  console.log('SMOKE PASSED — extracted connect/request, both turn surfaces, ordered actions, cancel, resume, and reconnecting -32005 recovery');
 }
 
 main().catch((error) => {

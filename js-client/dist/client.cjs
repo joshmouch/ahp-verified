@@ -32492,6 +32492,346 @@ let Client = (function() {
   }
   return $module;
 })(); // end of module Client
+let AhpSessionClient = (function() {
+  let $module = {};
+
+  $module.__default = class __default {
+    constructor () {
+      this._tname = "AhpSessionClient._default";
+    }
+    _parentTraits() {
+      return [];
+    }
+    static InitialRuntimeState() {
+      return AhpSessionClient.RuntimeState.create_RuntimeState(new BigNumber(1000), _dafny.Map.Empty.slice(), _dafny.Map.Empty.slice());
+    };
+    static TransportText(transport) {
+      if ((transport).is_Standard) {
+        return _dafny.Seq.UnicodeFromString("dispatch-action");
+      } else {
+        return _dafny.Seq.UnicodeFromString("chat-methods");
+      }
+    };
+    static EncodeChat(chat) {
+      return ConfluxRuntime_ConfluxCodec.Json.create_JObj(_dafny.Map.Empty.slice().updateUnsafe(_dafny.Seq.UnicodeFromString("sessionId"),ConfluxRuntime_ConfluxCodec.Json.create_JStr((chat).dtor_sessionId)).updateUnsafe(_dafny.Seq.UnicodeFromString("chatId"),ConfluxRuntime_ConfluxCodec.Json.create_JStr((chat).dtor_chatId)).updateUnsafe(_dafny.Seq.UnicodeFromString("agentId"),ConfluxRuntime_ConfluxCodec.Json.create_JStr((chat).dtor_agentId)).updateUnsafe(_dafny.Seq.UnicodeFromString("channel"),ConfluxRuntime_ConfluxCodec.Json.create_JStr((chat).dtor_channel)).updateUnsafe(_dafny.Seq.UnicodeFromString("transport"),ConfluxRuntime_ConfluxCodec.Json.create_JStr(AhpSessionClient.__default.TransportText((chat).dtor_transport))));
+    };
+    static DecodeChat(value) {
+      let _0_transport = ((_dafny.areEqual(ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(value, _dafny.Seq.UnicodeFromString("transport"))), _dafny.Seq.UnicodeFromString("dispatch-action"))) ? (AhpSessionClient.ChatTransport.create_Standard()) : (AhpSessionClient.ChatTransport.create_Convenience()));
+      return AhpSessionClient.Chat.create_Chat(ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(value, _dafny.Seq.UnicodeFromString("sessionId"))), ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(value, _dafny.Seq.UnicodeFromString("chatId"))), ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(value, _dafny.Seq.UnicodeFromString("agentId"))), ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(value, _dafny.Seq.UnicodeFromString("channel"))), _0_transport);
+    };
+    static MergeFields(defaults, overrides) {
+      return function () {
+        let _coll0 = new _dafny.Map();
+        for (const _compr_0 of (((defaults).Keys).Union((overrides).Keys)).Elements) {
+          let _0_key = _compr_0;
+          if ((((defaults).Keys).Union((overrides).Keys)).contains(_0_key)) {
+            _coll0.push([_0_key,(((overrides).contains(_0_key)) ? ((overrides).get(_0_key)) : ((defaults).get(_0_key)))]);
+          }
+        }
+        return _coll0;
+      }();
+    };
+    static MergeConfig(defaults, overrides) {
+      return ConfluxRuntime_ConfluxCodec.Json.create_JObj(AhpSessionClient.__default.MergeFields((((defaults).is_JObj) ? ((defaults).dtor_fields) : (_dafny.Map.Empty.slice())), (((overrides).is_JObj) ? ((overrides).dtor_fields) : (_dafny.Map.Empty.slice()))));
+    };
+    static IsMethodNotFound(message) {
+      let _source0 = message;
+      {
+        if (_source0.is_Failure) {
+          let _0_error = (_source0).error;
+          return (ConfluxRuntime_ConfluxCodec.__default.AsInt(ConfluxRuntime_ConfluxCodec.__default.Field(_0_error, _dafny.Seq.UnicodeFromString("code")))).isEqualTo(new BigNumber(-32601));
+        }
+      }
+      {
+        return false;
+      }
+    };
+    static ResolveConfigParams(provider, workingDirectory, overrides) {
+      return ConfluxRuntime_ConfluxCodec.Json.create_JObj(_dafny.Map.Empty.slice().updateUnsafe(_dafny.Seq.UnicodeFromString("channel"),ConfluxRuntime_ConfluxCodec.Json.create_JStr(_dafny.Seq.UnicodeFromString("ahp-root://"))).updateUnsafe(_dafny.Seq.UnicodeFromString("provider"),ConfluxRuntime_ConfluxCodec.Json.create_JStr(provider)).updateUnsafe(_dafny.Seq.UnicodeFromString("workingDirectory"),ConfluxRuntime_ConfluxCodec.Json.create_JStr(workingDirectory)).updateUnsafe(_dafny.Seq.UnicodeFromString("config"),overrides));
+    };
+    static ConvenienceCreateParams(provider, cwd) {
+      return ConfluxRuntime_ConfluxCodec.Json.create_JObj(_dafny.Map.Empty.slice().updateUnsafe(_dafny.Seq.UnicodeFromString("provider"),ConfluxRuntime_ConfluxCodec.Json.create_JStr(provider)).updateUnsafe(_dafny.Seq.UnicodeFromString("cwd"),ConfluxRuntime_ConfluxCodec.Json.create_JStr(cwd)));
+    };
+    static ConvenienceChat(provider, result) {
+      let _0_chatId = ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(result, _dafny.Seq.UnicodeFromString("chatId")));
+      let _1_channel = ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(result, _dafny.Seq.UnicodeFromString("channel")));
+      return AhpSessionClient.Chat.create_Chat(ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(result, _dafny.Seq.UnicodeFromString("sessionId"))), _0_chatId, ((_dafny.areEqual(ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(result, _dafny.Seq.UnicodeFromString("agentId"))), _dafny.Seq.UnicodeFromString(""))) ? (provider) : (ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(result, _dafny.Seq.UnicodeFromString("agentId"))))), ((_dafny.areEqual(_1_channel, _dafny.Seq.UnicodeFromString(""))) ? (_0_chatId) : (_1_channel)), AhpSessionClient.ChatTransport.create_Convenience());
+    };
+    static CreateSessionParams(sessionId, provider, workingDirectory, config) {
+      return ConfluxRuntime_ConfluxCodec.Json.create_JObj(_dafny.Map.Empty.slice().updateUnsafe(_dafny.Seq.UnicodeFromString("channel"),ConfluxRuntime_ConfluxCodec.Json.create_JStr(sessionId)).updateUnsafe(_dafny.Seq.UnicodeFromString("provider"),ConfluxRuntime_ConfluxCodec.Json.create_JStr(provider)).updateUnsafe(_dafny.Seq.UnicodeFromString("workingDirectories"),ConfluxRuntime_ConfluxCodec.Json.create_JArr(_dafny.Seq.of(ConfluxRuntime_ConfluxCodec.Json.create_JStr(workingDirectory)))).updateUnsafe(_dafny.Seq.UnicodeFromString("config"),config));
+    };
+    static SubscribeParams(channel) {
+      return ConfluxRuntime_ConfluxCodec.Json.create_JObj(_dafny.Map.Empty.slice().updateUnsafe(_dafny.Seq.UnicodeFromString("channel"),ConfluxRuntime_ConfluxCodec.Json.create_JStr(channel)));
+    };
+    static PromptParams(chatId, text) {
+      return ConfluxRuntime_ConfluxCodec.Json.create_JObj(_dafny.Map.Empty.slice().updateUnsafe(_dafny.Seq.UnicodeFromString("chatId"),ConfluxRuntime_ConfluxCodec.Json.create_JStr(chatId)).updateUnsafe(_dafny.Seq.UnicodeFromString("text"),ConfluxRuntime_ConfluxCodec.Json.create_JStr(text)));
+    };
+    static CancelParams(chatId) {
+      return ConfluxRuntime_ConfluxCodec.Json.create_JObj(_dafny.Map.Empty.slice().updateUnsafe(_dafny.Seq.UnicodeFromString("chatId"),ConfluxRuntime_ConfluxCodec.Json.create_JStr(chatId)));
+    };
+    static StandardChat(sessionId, provider, subscriptionResult) {
+      let _0_chatId = ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(ConfluxRuntime_ConfluxCodec.__default.Field(ConfluxRuntime_ConfluxCodec.__default.Field(subscriptionResult, _dafny.Seq.UnicodeFromString("snapshot")), _dafny.Seq.UnicodeFromString("state")), _dafny.Seq.UnicodeFromString("defaultChat")));
+      return AhpSessionClient.Chat.create_Chat(sessionId, _0_chatId, provider, _0_chatId, AhpSessionClient.ChatTransport.create_Standard());
+    };
+    static NextRequest(state) {
+      return AhpSessionClient.RuntimeState.create_RuntimeState(((state).dtor_nextId).plus(_dafny.ONE), (state).dtor_clientSeqs, (state).dtor_activeTurns);
+    };
+    static NextClientSeq(state, channel) {
+      return (((((state).dtor_clientSeqs).contains(channel)) ? (((state).dtor_clientSeqs).get(channel)) : (_dafny.ZERO))).plus(_dafny.ONE);
+    };
+    static StartTurn(state, channel, turnId) {
+      return AhpSessionClient.RuntimeState.create_RuntimeState((state).dtor_nextId, ((state).dtor_clientSeqs).update(channel, AhpSessionClient.__default.NextClientSeq(state, channel)), ((state).dtor_activeTurns).update(channel, turnId));
+    };
+    static FinishTurn(state, channel) {
+      return AhpSessionClient.RuntimeState.create_RuntimeState((state).dtor_nextId, (state).dtor_clientSeqs, ((state).dtor_activeTurns).Subtract(_dafny.Set.fromElements(channel)));
+    };
+    static TurnStartedAction(turnId, startedAt, text) {
+      return ConfluxRuntime_ConfluxCodec.Json.create_JObj(_dafny.Map.Empty.slice().updateUnsafe(_dafny.Seq.UnicodeFromString("type"),ConfluxRuntime_ConfluxCodec.Json.create_JStr(_dafny.Seq.UnicodeFromString("chat/turnStarted"))).updateUnsafe(_dafny.Seq.UnicodeFromString("turnId"),ConfluxRuntime_ConfluxCodec.Json.create_JStr(turnId)).updateUnsafe(_dafny.Seq.UnicodeFromString("startedAt"),ConfluxRuntime_ConfluxCodec.Json.create_JStr(startedAt)).updateUnsafe(_dafny.Seq.UnicodeFromString("message"),ConfluxRuntime_ConfluxCodec.Json.create_JObj(_dafny.Map.Empty.slice().updateUnsafe(_dafny.Seq.UnicodeFromString("text"),ConfluxRuntime_ConfluxCodec.Json.create_JStr(text)).updateUnsafe(_dafny.Seq.UnicodeFromString("origin"),ConfluxRuntime_ConfluxCodec.Json.create_JObj(_dafny.Map.Empty.slice().updateUnsafe(_dafny.Seq.UnicodeFromString("kind"),ConfluxRuntime_ConfluxCodec.Json.create_JStr(_dafny.Seq.UnicodeFromString("user"))))))));
+    };
+    static TurnCancelledAction(turnId) {
+      return ConfluxRuntime_ConfluxCodec.Json.create_JObj(_dafny.Map.Empty.slice().updateUnsafe(_dafny.Seq.UnicodeFromString("type"),ConfluxRuntime_ConfluxCodec.Json.create_JStr(_dafny.Seq.UnicodeFromString("chat/turnCancelled"))).updateUnsafe(_dafny.Seq.UnicodeFromString("turnId"),ConfluxRuntime_ConfluxCodec.Json.create_JStr(turnId)).updateUnsafe(_dafny.Seq.UnicodeFromString("duration"),ConfluxRuntime_ConfluxCodec.Json.create_JNum(_dafny.ZERO)));
+    };
+    static DispatchParams(channel, clientSeq, action) {
+      return ConfluxRuntime_ConfluxCodec.Json.create_JObj(_dafny.Map.Empty.slice().updateUnsafe(_dafny.Seq.UnicodeFromString("channel"),ConfluxRuntime_ConfluxCodec.Json.create_JStr(channel)).updateUnsafe(_dafny.Seq.UnicodeFromString("clientSeq"),ConfluxRuntime_ConfluxCodec.Json.create_JNum(clientSeq)).updateUnsafe(_dafny.Seq.UnicodeFromString("action"),action));
+    };
+    static EmptyTurn() {
+      return AhpSessionClient.TurnView.create_TurnView(_dafny.Seq.UnicodeFromString(""), _dafny.Seq.UnicodeFromString(""), _dafny.Seq.of(), _dafny.Seq.UnicodeFromString("chat/incomplete"), _dafny.ZERO);
+    };
+    static ObservedAction(params) {
+      let _0_action = ConfluxRuntime_ConfluxCodec.__default.Field(params, _dafny.Seq.UnicodeFromString("action"));
+      let _1_fields = _dafny.Map.Empty.slice().updateUnsafe(_dafny.Seq.UnicodeFromString("channel"),ConfluxRuntime_ConfluxCodec.__default.Field(params, _dafny.Seq.UnicodeFromString("channel"))).updateUnsafe(_dafny.Seq.UnicodeFromString("serverSeq"),ConfluxRuntime_ConfluxCodec.__default.Field(params, _dafny.Seq.UnicodeFromString("serverSeq"))).updateUnsafe(_dafny.Seq.UnicodeFromString("type"),ConfluxRuntime_ConfluxCodec.__default.Field(_0_action, _dafny.Seq.UnicodeFromString("type"))).updateUnsafe(_dafny.Seq.UnicodeFromString("rawAction"),_0_action);
+      let _2_withTurn = (((ConfluxRuntime_ConfluxCodec.__default.Field(_0_action, _dafny.Seq.UnicodeFromString("turnId"))).is_JStr) ? ((_1_fields).update(_dafny.Seq.UnicodeFromString("turnId"), ConfluxRuntime_ConfluxCodec.__default.Field(_0_action, _dafny.Seq.UnicodeFromString("turnId")))) : (_1_fields));
+      if ((ConfluxRuntime_ConfluxCodec.__default.Field(_0_action, _dafny.Seq.UnicodeFromString("content"))).is_JStr) {
+        return ConfluxRuntime_ConfluxCodec.Json.create_JObj((_2_withTurn).update(_dafny.Seq.UnicodeFromString("content"), ConfluxRuntime_ConfluxCodec.__default.Field(_0_action, _dafny.Seq.UnicodeFromString("content"))));
+      } else {
+        return ConfluxRuntime_ConfluxCodec.Json.create_JObj(_2_withTurn);
+      }
+    };
+    static AppendAction(view, params, expectedTurnId) {
+      let _0_action = ConfluxRuntime_ConfluxCodec.__default.Field(params, _dafny.Seq.UnicodeFromString("action"));
+      let _1_actionType = ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(_0_action, _dafny.Seq.UnicodeFromString("type")));
+      let _2_part = ConfluxRuntime_ConfluxCodec.__default.Field(_0_action, _dafny.Seq.UnicodeFromString("part"));
+      let _3_content = ((_dafny.areEqual(_1_actionType, _dafny.Seq.UnicodeFromString("chat/delta"))) ? (ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(_0_action, _dafny.Seq.UnicodeFromString("content")))) : ((((_dafny.areEqual(_1_actionType, _dafny.Seq.UnicodeFromString("chat/responsePart"))) && (_dafny.areEqual(ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(_2_part, _dafny.Seq.UnicodeFromString("kind"))), _dafny.Seq.UnicodeFromString("markdown")))) ? (ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(_2_part, _dafny.Seq.UnicodeFromString("content")))) : (_dafny.Seq.UnicodeFromString("")))));
+      let _4_reasoning = ((_dafny.areEqual(_1_actionType, _dafny.Seq.UnicodeFromString("chat/reasoning"))) ? (ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(_0_action, _dafny.Seq.UnicodeFromString("content")))) : ((((_dafny.areEqual(_1_actionType, _dafny.Seq.UnicodeFromString("chat/responsePart"))) && (_dafny.areEqual(ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(_2_part, _dafny.Seq.UnicodeFromString("kind"))), _dafny.Seq.UnicodeFromString("reasoning")))) ? (ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(_2_part, _dafny.Seq.UnicodeFromString("content")))) : (_dafny.Seq.UnicodeFromString("")))));
+      let _5_terminal = ((_dafny.areEqual(expectedTurnId, _dafny.Seq.UnicodeFromString(""))) || (_dafny.areEqual(ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(_0_action, _dafny.Seq.UnicodeFromString("turnId"))), expectedTurnId))) && (((_dafny.areEqual(_1_actionType, _dafny.Seq.UnicodeFromString("chat/turnComplete"))) || (_dafny.areEqual(_1_actionType, _dafny.Seq.UnicodeFromString("chat/turnCancelled")))) || (_dafny.areEqual(_1_actionType, _dafny.Seq.UnicodeFromString("chat/error"))));
+      return AhpSessionClient.TurnView.create_TurnView(_dafny.Seq.Concat((view).dtor_text, _3_content), _dafny.Seq.Concat((view).dtor_reasoning, _4_reasoning), _dafny.Seq.Concat((view).dtor_actions, _dafny.Seq.of(AhpSessionClient.__default.ObservedAction(params))), ((_5_terminal) ? (_1_actionType) : ((view).dtor_outcome)), ConfluxRuntime_ConfluxCodec.__default.AsNat(ConfluxRuntime_ConfluxCodec.__default.Field(params, _dafny.Seq.UnicodeFromString("serverSeq"))));
+    };
+    static Observe(view, message, expectedChannel, expectedTurnId) {
+      let _source0 = message;
+      {
+        if (_source0.is_Notification) {
+          let _0_rpcMethod = (_source0).rpcMethod;
+          let _1_params = (_source0).params;
+          if (((_dafny.areEqual(_0_rpcMethod, _dafny.Seq.UnicodeFromString("action"))) && (_dafny.areEqual(ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(_1_params, _dafny.Seq.UnicodeFromString("channel"))), expectedChannel))) && (((view).dtor_lastServerSeq).isLessThan(ConfluxRuntime_ConfluxCodec.__default.AsNat(ConfluxRuntime_ConfluxCodec.__default.Field(_1_params, _dafny.Seq.UnicodeFromString("serverSeq")))))) {
+            return AhpSessionClient.__default.AppendAction(view, _1_params, expectedTurnId);
+          } else {
+            return view;
+          }
+        }
+      }
+      {
+        return view;
+      }
+    };
+    static TurnResult(chatId, view) {
+      return ConfluxRuntime_ConfluxCodec.Json.create_JObj(_dafny.Map.Empty.slice().updateUnsafe(_dafny.Seq.UnicodeFromString("chatId"),ConfluxRuntime_ConfluxCodec.Json.create_JStr(chatId)).updateUnsafe(_dafny.Seq.UnicodeFromString("text"),ConfluxRuntime_ConfluxCodec.Json.create_JStr((view).dtor_text)).updateUnsafe(_dafny.Seq.UnicodeFromString("reasoning"),ConfluxRuntime_ConfluxCodec.Json.create_JStr((view).dtor_reasoning)).updateUnsafe(_dafny.Seq.UnicodeFromString("actions"),ConfluxRuntime_ConfluxCodec.Json.create_JArr((view).dtor_actions)).updateUnsafe(_dafny.Seq.UnicodeFromString("outcome"),ConfluxRuntime_ConfluxCodec.Json.create_JStr((view).dtor_outcome)));
+    };
+    static IsTerminal(view) {
+      return ((_dafny.areEqual((view).dtor_outcome, _dafny.Seq.UnicodeFromString("chat/turnComplete"))) || (_dafny.areEqual((view).dtor_outcome, _dafny.Seq.UnicodeFromString("chat/turnCancelled")))) || (_dafny.areEqual((view).dtor_outcome, _dafny.Seq.UnicodeFromString("chat/error")));
+    };
+  };
+
+  $module.ChatTransport = class ChatTransport {
+    constructor(tag) {
+      this.$tag = tag;
+    }
+    static create_Convenience() {
+      let $dt = new ChatTransport(0);
+      return $dt;
+    }
+    static create_Standard() {
+      let $dt = new ChatTransport(1);
+      return $dt;
+    }
+    get is_Convenience() { return this.$tag === 0; }
+    get is_Standard() { return this.$tag === 1; }
+    static get AllSingletonConstructors() {
+      return this.AllSingletonConstructors_();
+    }
+    static *AllSingletonConstructors_() {
+      yield ChatTransport.create_Convenience();
+      yield ChatTransport.create_Standard();
+    }
+    toString() {
+      if (this.$tag === 0) {
+        return "AhpSessionClient.ChatTransport.Convenience";
+      } else if (this.$tag === 1) {
+        return "AhpSessionClient.ChatTransport.Standard";
+      } else  {
+        return "<unexpected>";
+      }
+    }
+    equals(other) {
+      if (this === other) {
+        return true;
+      } else if (this.$tag === 0) {
+        return other.$tag === 0;
+      } else if (this.$tag === 1) {
+        return other.$tag === 1;
+      } else  {
+        return false; // unexpected
+      }
+    }
+    static Default() {
+      return AhpSessionClient.ChatTransport.create_Convenience();
+    }
+    static Rtd() {
+      return class {
+        static get Default() {
+          return ChatTransport.Default();
+        }
+      };
+    }
+  }
+
+  $module.Chat = class Chat {
+    constructor(tag) {
+      this.$tag = tag;
+    }
+    static create_Chat(sessionId, chatId, agentId, channel, transport) {
+      let $dt = new Chat(0);
+      $dt.sessionId = sessionId;
+      $dt.chatId = chatId;
+      $dt.agentId = agentId;
+      $dt.channel = channel;
+      $dt.transport = transport;
+      return $dt;
+    }
+    get is_Chat() { return this.$tag === 0; }
+    get dtor_sessionId() { return this.sessionId; }
+    get dtor_chatId() { return this.chatId; }
+    get dtor_agentId() { return this.agentId; }
+    get dtor_channel() { return this.channel; }
+    get dtor_transport() { return this.transport; }
+    toString() {
+      if (this.$tag === 0) {
+        return "AhpSessionClient.Chat.Chat" + "(" + this.sessionId.toVerbatimString(true) + ", " + this.chatId.toVerbatimString(true) + ", " + this.agentId.toVerbatimString(true) + ", " + this.channel.toVerbatimString(true) + ", " + _dafny.toString(this.transport) + ")";
+      } else  {
+        return "<unexpected>";
+      }
+    }
+    equals(other) {
+      if (this === other) {
+        return true;
+      } else if (this.$tag === 0) {
+        return other.$tag === 0 && _dafny.areEqual(this.sessionId, other.sessionId) && _dafny.areEqual(this.chatId, other.chatId) && _dafny.areEqual(this.agentId, other.agentId) && _dafny.areEqual(this.channel, other.channel) && _dafny.areEqual(this.transport, other.transport);
+      } else  {
+        return false; // unexpected
+      }
+    }
+    static Default() {
+      return AhpSessionClient.Chat.create_Chat(_dafny.Seq.UnicodeFromString(""), _dafny.Seq.UnicodeFromString(""), _dafny.Seq.UnicodeFromString(""), _dafny.Seq.UnicodeFromString(""), AhpSessionClient.ChatTransport.Default());
+    }
+    static Rtd() {
+      return class {
+        static get Default() {
+          return Chat.Default();
+        }
+      };
+    }
+  }
+
+  $module.RuntimeState = class RuntimeState {
+    constructor(tag) {
+      this.$tag = tag;
+    }
+    static create_RuntimeState(nextId, clientSeqs, activeTurns) {
+      let $dt = new RuntimeState(0);
+      $dt.nextId = nextId;
+      $dt.clientSeqs = clientSeqs;
+      $dt.activeTurns = activeTurns;
+      return $dt;
+    }
+    get is_RuntimeState() { return this.$tag === 0; }
+    get dtor_nextId() { return this.nextId; }
+    get dtor_clientSeqs() { return this.clientSeqs; }
+    get dtor_activeTurns() { return this.activeTurns; }
+    toString() {
+      if (this.$tag === 0) {
+        return "AhpSessionClient.RuntimeState.RuntimeState" + "(" + _dafny.toString(this.nextId) + ", " + _dafny.toString(this.clientSeqs) + ", " + _dafny.toString(this.activeTurns) + ")";
+      } else  {
+        return "<unexpected>";
+      }
+    }
+    equals(other) {
+      if (this === other) {
+        return true;
+      } else if (this.$tag === 0) {
+        return other.$tag === 0 && _dafny.areEqual(this.nextId, other.nextId) && _dafny.areEqual(this.clientSeqs, other.clientSeqs) && _dafny.areEqual(this.activeTurns, other.activeTurns);
+      } else  {
+        return false; // unexpected
+      }
+    }
+    static Default() {
+      return AhpSessionClient.RuntimeState.create_RuntimeState(_dafny.ZERO, _dafny.Map.Empty, _dafny.Map.Empty);
+    }
+    static Rtd() {
+      return class {
+        static get Default() {
+          return RuntimeState.Default();
+        }
+      };
+    }
+  }
+
+  $module.TurnView = class TurnView {
+    constructor(tag) {
+      this.$tag = tag;
+    }
+    static create_TurnView(text, reasoning, actions, outcome, lastServerSeq) {
+      let $dt = new TurnView(0);
+      $dt.text = text;
+      $dt.reasoning = reasoning;
+      $dt.actions = actions;
+      $dt.outcome = outcome;
+      $dt.lastServerSeq = lastServerSeq;
+      return $dt;
+    }
+    get is_TurnView() { return this.$tag === 0; }
+    get dtor_text() { return this.text; }
+    get dtor_reasoning() { return this.reasoning; }
+    get dtor_actions() { return this.actions; }
+    get dtor_outcome() { return this.outcome; }
+    get dtor_lastServerSeq() { return this.lastServerSeq; }
+    toString() {
+      if (this.$tag === 0) {
+        return "AhpSessionClient.TurnView.TurnView" + "(" + this.text.toVerbatimString(true) + ", " + this.reasoning.toVerbatimString(true) + ", " + _dafny.toString(this.actions) + ", " + this.outcome.toVerbatimString(true) + ", " + _dafny.toString(this.lastServerSeq) + ")";
+      } else  {
+        return "<unexpected>";
+      }
+    }
+    equals(other) {
+      if (this === other) {
+        return true;
+      } else if (this.$tag === 0) {
+        return other.$tag === 0 && _dafny.areEqual(this.text, other.text) && _dafny.areEqual(this.reasoning, other.reasoning) && _dafny.areEqual(this.actions, other.actions) && _dafny.areEqual(this.outcome, other.outcome) && _dafny.areEqual(this.lastServerSeq, other.lastServerSeq);
+      } else  {
+        return false; // unexpected
+      }
+    }
+    static Default() {
+      return AhpSessionClient.TurnView.create_TurnView(_dafny.Seq.UnicodeFromString(""), _dafny.Seq.UnicodeFromString(""), _dafny.Seq.of(), _dafny.Seq.UnicodeFromString(""), _dafny.ZERO);
+    }
+    static Rtd() {
+      return class {
+        static get Default() {
+          return TurnView.Default();
+        }
+      };
+    }
+  }
+  return $module;
+})(); // end of module AhpSessionClient
 let AhpConnection = (function() {
   let $module = {};
 
@@ -32706,6 +33046,67 @@ let AhpConnectionRuntime = (function() {
       }
       return [open, response, notifications];
     }
+    static Call(conn, state, rpcMethod, params) {
+      let next = AhpSessionClient.RuntimeState.Default();
+      let response = ConfluxRuntime_ConfluxJsonRpc.Message.Default();
+      let notifications = _dafny.Seq.of();
+      let errorText = _dafny.Seq.UnicodeFromString("");
+      next = AhpSessionClient.__default.NextRequest(state);
+      response = ConfluxRuntime_ConfluxJsonRpc.Message.create_Invalid();
+      notifications = _dafny.Seq.of();
+      errorText = _dafny.Seq.UnicodeFromString("request send failed");
+      let _0_request;
+      _0_request = ConfluxRuntime_ConfluxJsonRpc.__default.RequestEnvelope(ConfluxRuntime_ConfluxCodec.Json.create_JNum((state).dtor_nextId), rpcMethod, params);
+      let _1_requestText;
+      let _out0;
+      _out0 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(_0_request);
+      _1_requestText = _out0;
+      let _2_sent;
+      let _out1;
+      _out1 = ConfluxRuntime_ConfluxWebSocketCapability.__default.SendWebSocketText(conn, _1_requestText);
+      _2_sent = _out1;
+      if (!(_2_sent)) {
+        return [next, response, notifications, errorText];
+      }
+      let _3_open;
+      let _4_received;
+      let _5_pending;
+      let _out2;
+      let _out3;
+      let _out4;
+      let _outcollector0 = AhpConnectionRuntime.__default.ReceiveResponse(conn, (state).dtor_nextId);
+      _out2 = _outcollector0[0];
+      _out3 = _outcollector0[1];
+      _out4 = _outcollector0[2];
+      _3_open = _out2;
+      _4_received = _out3;
+      _5_pending = _out4;
+      notifications = _5_pending;
+      if (!(_3_open)) {
+        errorText = _dafny.Seq.UnicodeFromString("connection closed during request");
+        return [next, response, notifications, errorText];
+      }
+      response = _4_received;
+      errorText = _dafny.Seq.UnicodeFromString("");
+      return [next, response, notifications, errorText];
+    }
+    static FoldNotifications(raw, channel, turnId) {
+      let view = AhpSessionClient.TurnView.Default();
+      view = AhpSessionClient.__default.EmptyTurn();
+      let _0_index;
+      _0_index = _dafny.ZERO;
+      while ((_0_index).isLessThan(new BigNumber((raw).length))) {
+        let _1_parsed;
+        let _out0;
+        _out0 = ConfluxRuntime_ConfluxJsonRpc.__default.Parse((raw)[_0_index]);
+        _1_parsed = _out0;
+        if ((_1_parsed).is_Some) {
+          view = AhpSessionClient.__default.Observe(view, (_1_parsed).dtor_value, channel, turnId);
+        }
+        _0_index = (_0_index).plus(_dafny.ONE);
+      }
+      return view;
+    }
     static Connect(url, clientId, subscriptions) {
       let ok = false;
       let conn = _dafny.ZERO;
@@ -32822,12 +33223,19 @@ let AhpConnectionRuntime = (function() {
       }
       return [ok, conn, resultText, notifications, errorText];
     }
-    static Request(conn, id, rpcMethod, paramsText) {
+    static InitialState() {
+      let state = AhpSessionClient.RuntimeState.Default();
+      state = AhpSessionClient.__default.InitialRuntimeState();
+      return state;
+    }
+    static PublicRequest(conn, state, rpcMethod, paramsText) {
       let ok = false;
+      let next = AhpSessionClient.RuntimeState.Default();
       let resultText = _dafny.Seq.UnicodeFromString("");
       let notifications = _dafny.Seq.of();
       let errorText = _dafny.Seq.UnicodeFromString("");
       ok = false;
+      next = state;
       resultText = _dafny.Seq.UnicodeFromString("");
       notifications = _dafny.Seq.of();
       errorText = _dafny.Seq.UnicodeFromString("invalid request params");
@@ -32836,59 +33244,43 @@ let AhpConnectionRuntime = (function() {
       _out0 = ConfluxRuntime_ConfluxJsonText.__default.ParseJsonChecked(paramsText);
       _0_parsed = _out0;
       if ((_0_parsed).is_Invalid) {
-        return [ok, resultText, notifications, errorText];
+        return [ok, next, resultText, notifications, errorText];
       }
-      let _1_request;
-      _1_request = ConfluxRuntime_ConfluxJsonRpc.__default.RequestEnvelope(ConfluxRuntime_ConfluxCodec.Json.create_JNum(id), rpcMethod, (_0_parsed).dtor_value);
-      let _2_requestText;
+      let _1_response = ConfluxRuntime_ConfluxJsonRpc.Message.Default();
       let _out1;
-      _out1 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(_1_request);
-      _2_requestText = _out1;
-      let _3_sent;
       let _out2;
-      _out2 = ConfluxRuntime_ConfluxWebSocketCapability.__default.SendWebSocketText(conn, _2_requestText);
-      _3_sent = _out2;
-      if (!(_3_sent)) {
-        errorText = _dafny.Seq.UnicodeFromString("request send failed");
-        return [ok, resultText, notifications, errorText];
-      }
-      let _4_open;
-      let _5_response;
-      let _6_received;
       let _out3;
       let _out4;
-      let _out5;
-      let _outcollector0 = AhpConnectionRuntime.__default.ReceiveResponse(conn, id);
-      _out3 = _outcollector0[0];
-      _out4 = _outcollector0[1];
-      _out5 = _outcollector0[2];
-      _4_open = _out3;
-      _5_response = _out4;
-      _6_received = _out5;
-      notifications = _6_received;
-      if (!(_4_open)) {
-        errorText = _dafny.Seq.UnicodeFromString("connection closed during request");
-        return [ok, resultText, notifications, errorText];
+      let _outcollector0 = AhpConnectionRuntime.__default.Call(conn, state, rpcMethod, (_0_parsed).dtor_value);
+      _out1 = _outcollector0[0];
+      _out2 = _outcollector0[1];
+      _out3 = _outcollector0[2];
+      _out4 = _outcollector0[3];
+      next = _out1;
+      _1_response = _out2;
+      notifications = _out3;
+      errorText = _out4;
+      if (!_dafny.areEqual(errorText, _dafny.Seq.UnicodeFromString(""))) {
+        return [ok, next, resultText, notifications, errorText];
       }
-      let _source0 = _5_response;
+      let _source0 = _1_response;
       Lmatch0: {
         {
           if (_source0.is_Success) {
-            let _7_result = (_source0).result;
-            let _out6;
-            _out6 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(_7_result);
-            resultText = _out6;
-            errorText = _dafny.Seq.UnicodeFromString("");
+            let _2_result = (_source0).result;
+            let _out5;
+            _out5 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(_2_result);
+            resultText = _out5;
             ok = true;
             break Lmatch0;
           }
         }
         {
           if (_source0.is_Failure) {
-            let _8_error = (_source0).error;
-            let _out7;
-            _out7 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(_8_error);
-            errorText = _out7;
+            let _3_error = (_source0).error;
+            let _out6;
+            _out6 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(_3_error);
+            errorText = _out6;
             break Lmatch0;
           }
         }
@@ -32896,90 +33288,619 @@ let AhpConnectionRuntime = (function() {
           errorText = _dafny.Seq.UnicodeFromString("invalid response");
         }
       }
-      return [ok, resultText, notifications, errorText];
+      return [ok, next, resultText, notifications, errorText];
     }
-    static DispatchAction(conn, paramsText, expectedChannel, expectedTurnId) {
+    static CreateChat(conn, state, provider, cwd, workingDirectory, sessionId, configText) {
       let ok = false;
+      let next = AhpSessionClient.RuntimeState.Default();
+      let chatText = _dafny.Seq.UnicodeFromString("");
       let notifications = _dafny.Seq.of();
       let errorText = _dafny.Seq.UnicodeFromString("");
       ok = false;
+      next = state;
+      chatText = _dafny.Seq.UnicodeFromString("");
       notifications = _dafny.Seq.of();
-      errorText = _dafny.Seq.UnicodeFromString("invalid dispatchAction params");
-      let _0_parsedParams;
+      errorText = _dafny.Seq.UnicodeFromString("invalid chat config");
+      let _0_parsedConfig;
       let _out0;
-      _out0 = ConfluxRuntime_ConfluxJsonText.__default.ParseJsonChecked(paramsText);
-      _0_parsedParams = _out0;
-      if ((_0_parsedParams).is_Invalid) {
-        return [ok, notifications, errorText];
+      _out0 = ConfluxRuntime_ConfluxJsonText.__default.ParseJsonChecked(configText);
+      _0_parsedConfig = _out0;
+      if ((_0_parsedConfig).is_Invalid) {
+        return [ok, next, chatText, notifications, errorText];
       }
-      let _1_notification;
-      _1_notification = ConfluxRuntime_ConfluxJsonRpc.__default.NotificationEnvelope(_dafny.Seq.UnicodeFromString("dispatchAction"), (_0_parsedParams).dtor_value);
-      let _2_notificationText;
+      let _1_response = ConfluxRuntime_ConfluxJsonRpc.Message.Default();
+      let _2_received = _dafny.Seq.of();
+      let _3_callError = _dafny.Seq.UnicodeFromString("");
       let _out1;
-      _out1 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(_1_notification);
-      _2_notificationText = _out1;
-      let _3_sent;
       let _out2;
-      _out2 = ConfluxRuntime_ConfluxWebSocketCapability.__default.SendWebSocketText(conn, _2_notificationText);
-      _3_sent = _out2;
-      if (!(_3_sent)) {
-        errorText = _dafny.Seq.UnicodeFromString("dispatchAction send failed");
-        return [ok, notifications, errorText];
+      let _out3;
+      let _out4;
+      let _outcollector0 = AhpConnectionRuntime.__default.Call(conn, next, _dafny.Seq.UnicodeFromString("chat/create"), AhpSessionClient.__default.ConvenienceCreateParams(provider, cwd));
+      _out1 = _outcollector0[0];
+      _out2 = _outcollector0[1];
+      _out3 = _outcollector0[2];
+      _out4 = _outcollector0[3];
+      next = _out1;
+      _1_response = _out2;
+      _2_received = _out3;
+      _3_callError = _out4;
+      notifications = _dafny.Seq.Concat(notifications, _2_received);
+      if (!_dafny.areEqual(_3_callError, _dafny.Seq.UnicodeFromString(""))) {
+        errorText = _3_callError;
+        return [ok, next, chatText, notifications, errorText];
       }
-      while (true) {
-        let _4_open;
-        let _5_isText;
-        let _6_text;
+      let _source0 = _1_response;
+      Lmatch0: {
+        {
+          if (_source0.is_Success) {
+            let _4_result = (_source0).result;
+            let _out5;
+            _out5 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(AhpSessionClient.__default.EncodeChat(AhpSessionClient.__default.ConvenienceChat(provider, _4_result)));
+            chatText = _out5;
+            errorText = _dafny.Seq.UnicodeFromString("");
+            ok = true;
+            return [ok, next, chatText, notifications, errorText];
+            break Lmatch0;
+          }
+        }
+        {
+          if (_source0.is_Failure) {
+            let _5_error = (_source0).error;
+            if (!(AhpSessionClient.__default.IsMethodNotFound(_1_response))) {
+              let _out6;
+              _out6 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(_5_error);
+              errorText = _out6;
+              return [ok, next, chatText, notifications, errorText];
+            }
+            break Lmatch0;
+          }
+        }
+        {
+          errorText = _dafny.Seq.UnicodeFromString("invalid chat/create response");
+          return [ok, next, chatText, notifications, errorText];
+        }
+      }
+      let _6_config;
+      _6_config = (_0_parsedConfig).dtor_value;
+      let _out7;
+      let _out8;
+      let _out9;
+      let _out10;
+      let _outcollector1 = AhpConnectionRuntime.__default.Call(conn, next, _dafny.Seq.UnicodeFromString("resolveSessionConfig"), AhpSessionClient.__default.ResolveConfigParams(provider, workingDirectory, _6_config));
+      _out7 = _outcollector1[0];
+      _out8 = _outcollector1[1];
+      _out9 = _outcollector1[2];
+      _out10 = _outcollector1[3];
+      next = _out7;
+      _1_response = _out8;
+      _2_received = _out9;
+      _3_callError = _out10;
+      notifications = _dafny.Seq.Concat(notifications, _2_received);
+      if (!_dafny.areEqual(_3_callError, _dafny.Seq.UnicodeFromString(""))) {
+        errorText = _3_callError;
+        return [ok, next, chatText, notifications, errorText];
+      }
+      let _source1 = _1_response;
+      Lmatch1: {
+        {
+          if (_source1.is_Success) {
+            let _7_result = (_source1).result;
+            _6_config = AhpSessionClient.__default.MergeConfig(ConfluxRuntime_ConfluxCodec.__default.Field(_7_result, _dafny.Seq.UnicodeFromString("values")), _6_config);
+            break Lmatch1;
+          }
+        }
+        {
+          if (_source1.is_Failure) {
+            let _8_error = (_source1).error;
+            if (!(AhpSessionClient.__default.IsMethodNotFound(_1_response))) {
+              let _out11;
+              _out11 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(_8_error);
+              errorText = _out11;
+              return [ok, next, chatText, notifications, errorText];
+            }
+            break Lmatch1;
+          }
+        }
+        {
+          errorText = _dafny.Seq.UnicodeFromString("invalid resolveSessionConfig response");
+          return [ok, next, chatText, notifications, errorText];
+        }
+      }
+      let _out12;
+      let _out13;
+      let _out14;
+      let _out15;
+      let _outcollector2 = AhpConnectionRuntime.__default.Call(conn, next, _dafny.Seq.UnicodeFromString("createSession"), AhpSessionClient.__default.CreateSessionParams(sessionId, provider, workingDirectory, _6_config));
+      _out12 = _outcollector2[0];
+      _out13 = _outcollector2[1];
+      _out14 = _outcollector2[2];
+      _out15 = _outcollector2[3];
+      next = _out12;
+      _1_response = _out13;
+      _2_received = _out14;
+      _3_callError = _out15;
+      notifications = _dafny.Seq.Concat(notifications, _2_received);
+      if (!_dafny.areEqual(_3_callError, _dafny.Seq.UnicodeFromString(""))) {
+        errorText = _3_callError;
+        return [ok, next, chatText, notifications, errorText];
+      }
+      let _source2 = _1_response;
+      Lmatch2: {
+        {
+          if (_source2.is_Failure) {
+            let _9_error = (_source2).error;
+            let _out16;
+            _out16 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(_9_error);
+            errorText = _out16;
+            return [ok, next, chatText, notifications, errorText];
+            break Lmatch2;
+          }
+        }
+        {
+          if (_source2.is_Success) {
+            break Lmatch2;
+          }
+        }
+        {
+          errorText = _dafny.Seq.UnicodeFromString("invalid createSession response");
+          return [ok, next, chatText, notifications, errorText];
+        }
+      }
+      let _out17;
+      let _out18;
+      let _out19;
+      let _out20;
+      let _outcollector3 = AhpConnectionRuntime.__default.Call(conn, next, _dafny.Seq.UnicodeFromString("subscribe"), AhpSessionClient.__default.SubscribeParams(sessionId));
+      _out17 = _outcollector3[0];
+      _out18 = _outcollector3[1];
+      _out19 = _outcollector3[2];
+      _out20 = _outcollector3[3];
+      next = _out17;
+      _1_response = _out18;
+      _2_received = _out19;
+      _3_callError = _out20;
+      notifications = _dafny.Seq.Concat(notifications, _2_received);
+      if (!_dafny.areEqual(_3_callError, _dafny.Seq.UnicodeFromString(""))) {
+        errorText = _3_callError;
+        return [ok, next, chatText, notifications, errorText];
+      }
+      let _10_chat;
+      _10_chat = AhpSessionClient.Chat.create_Chat(sessionId, _dafny.Seq.UnicodeFromString(""), provider, _dafny.Seq.UnicodeFromString(""), AhpSessionClient.ChatTransport.create_Standard());
+      let _source3 = _1_response;
+      Lmatch3: {
+        {
+          if (_source3.is_Failure) {
+            let _11_error = (_source3).error;
+            let _out21;
+            _out21 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(_11_error);
+            errorText = _out21;
+            return [ok, next, chatText, notifications, errorText];
+            break Lmatch3;
+          }
+        }
+        {
+          if (_source3.is_Success) {
+            let _12_result = (_source3).result;
+            _10_chat = AhpSessionClient.__default.StandardChat(sessionId, provider, _12_result);
+            break Lmatch3;
+          }
+        }
+        {
+          errorText = _dafny.Seq.UnicodeFromString("invalid session subscription response");
+          return [ok, next, chatText, notifications, errorText];
+        }
+      }
+      if (_dafny.areEqual((_10_chat).dtor_chatId, _dafny.Seq.UnicodeFromString(""))) {
+        errorText = _dafny.Seq.UnicodeFromString("session carries no default chat");
+        return [ok, next, chatText, notifications, errorText];
+      }
+      let _out22;
+      let _out23;
+      let _out24;
+      let _out25;
+      let _outcollector4 = AhpConnectionRuntime.__default.Call(conn, next, _dafny.Seq.UnicodeFromString("subscribe"), AhpSessionClient.__default.SubscribeParams((_10_chat).dtor_channel));
+      _out22 = _outcollector4[0];
+      _out23 = _outcollector4[1];
+      _out24 = _outcollector4[2];
+      _out25 = _outcollector4[3];
+      next = _out22;
+      _1_response = _out23;
+      _2_received = _out24;
+      _3_callError = _out25;
+      notifications = _dafny.Seq.Concat(notifications, _2_received);
+      if (!_dafny.areEqual(_3_callError, _dafny.Seq.UnicodeFromString(""))) {
+        errorText = _3_callError;
+        return [ok, next, chatText, notifications, errorText];
+      }
+      let _source4 = _1_response;
+      Lmatch4: {
+        {
+          if (_source4.is_Failure) {
+            let _13_error = (_source4).error;
+            let _out26;
+            _out26 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(_13_error);
+            errorText = _out26;
+            return [ok, next, chatText, notifications, errorText];
+            break Lmatch4;
+          }
+        }
+        {
+          if (_source4.is_Success) {
+            break Lmatch4;
+          }
+        }
+        {
+          errorText = _dafny.Seq.UnicodeFromString("invalid chat subscription response");
+          return [ok, next, chatText, notifications, errorText];
+        }
+      }
+      let _out27;
+      _out27 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(AhpSessionClient.__default.EncodeChat(_10_chat));
+      chatText = _out27;
+      errorText = _dafny.Seq.UnicodeFromString("");
+      ok = true;
+      return [ok, next, chatText, notifications, errorText];
+    }
+    static AttachChat(conn, state, chatText) {
+      let ok = false;
+      let next = AhpSessionClient.RuntimeState.Default();
+      let notifications = _dafny.Seq.of();
+      let errorText = _dafny.Seq.UnicodeFromString("");
+      ok = false;
+      next = state;
+      notifications = _dafny.Seq.of();
+      errorText = _dafny.Seq.UnicodeFromString("invalid chat");
+      let _0_parsed;
+      let _out0;
+      _out0 = ConfluxRuntime_ConfluxJsonText.__default.ParseJsonChecked(chatText);
+      _0_parsed = _out0;
+      if ((_0_parsed).is_Invalid) {
+        return [ok, next, notifications, errorText];
+      }
+      let _1_chat;
+      _1_chat = AhpSessionClient.__default.DecodeChat((_0_parsed).dtor_value);
+      if (((_1_chat).dtor_transport).is_Convenience) {
+        ok = true;
+        errorText = _dafny.Seq.UnicodeFromString("");
+        return [ok, next, notifications, errorText];
+      }
+      let _2_response = ConfluxRuntime_ConfluxJsonRpc.Message.Default();
+      let _3_received = _dafny.Seq.of();
+      let _4_callError = _dafny.Seq.UnicodeFromString("");
+      let _out1;
+      let _out2;
+      let _out3;
+      let _out4;
+      let _outcollector0 = AhpConnectionRuntime.__default.Call(conn, next, _dafny.Seq.UnicodeFromString("subscribe"), AhpSessionClient.__default.SubscribeParams((_1_chat).dtor_sessionId));
+      _out1 = _outcollector0[0];
+      _out2 = _outcollector0[1];
+      _out3 = _outcollector0[2];
+      _out4 = _outcollector0[3];
+      next = _out1;
+      _2_response = _out2;
+      _3_received = _out3;
+      _4_callError = _out4;
+      notifications = _dafny.Seq.Concat(notifications, _3_received);
+      if (!_dafny.areEqual(_4_callError, _dafny.Seq.UnicodeFromString(""))) {
+        errorText = _4_callError;
+        return [ok, next, notifications, errorText];
+      }
+      let _source0 = _2_response;
+      Lmatch0: {
+        {
+          if (_source0.is_Failure) {
+            let _5_error = (_source0).error;
+            let _out5;
+            _out5 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(_5_error);
+            errorText = _out5;
+            return [ok, next, notifications, errorText];
+            break Lmatch0;
+          }
+        }
+        {
+          if (_source0.is_Success) {
+            break Lmatch0;
+          }
+        }
+        {
+          errorText = _dafny.Seq.UnicodeFromString("invalid session subscription response");
+          return [ok, next, notifications, errorText];
+        }
+      }
+      let _out6;
+      let _out7;
+      let _out8;
+      let _out9;
+      let _outcollector1 = AhpConnectionRuntime.__default.Call(conn, next, _dafny.Seq.UnicodeFromString("subscribe"), AhpSessionClient.__default.SubscribeParams((_1_chat).dtor_channel));
+      _out6 = _outcollector1[0];
+      _out7 = _outcollector1[1];
+      _out8 = _outcollector1[2];
+      _out9 = _outcollector1[3];
+      next = _out6;
+      _2_response = _out7;
+      _3_received = _out8;
+      _4_callError = _out9;
+      notifications = _dafny.Seq.Concat(notifications, _3_received);
+      if (!_dafny.areEqual(_4_callError, _dafny.Seq.UnicodeFromString(""))) {
+        errorText = _4_callError;
+        return [ok, next, notifications, errorText];
+      }
+      let _source1 = _2_response;
+      Lmatch1: {
+        {
+          if (_source1.is_Failure) {
+            let _6_error = (_source1).error;
+            let _out10;
+            _out10 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(_6_error);
+            errorText = _out10;
+            return [ok, next, notifications, errorText];
+            break Lmatch1;
+          }
+        }
+        {
+          if (_source1.is_Success) {
+            ok = true;
+            errorText = _dafny.Seq.UnicodeFromString("");
+            break Lmatch1;
+          }
+        }
+        {
+          errorText = _dafny.Seq.UnicodeFromString("invalid chat subscription response");
+        }
+      }
+      return [ok, next, notifications, errorText];
+    }
+    static DispatchTurn(conn, params, expectedChannel, expectedTurnId) {
+      let ok = false;
+      let view = AhpSessionClient.TurnView.Default();
+      let notifications = _dafny.Seq.of();
+      let errorText = _dafny.Seq.UnicodeFromString("");
+      ok = false;
+      view = AhpSessionClient.__default.EmptyTurn();
+      notifications = _dafny.Seq.of();
+      errorText = _dafny.Seq.UnicodeFromString("dispatchAction send failed");
+      let _0_notification;
+      _0_notification = ConfluxRuntime_ConfluxJsonRpc.__default.NotificationEnvelope(_dafny.Seq.UnicodeFromString("dispatchAction"), params);
+      let _1_text;
+      let _out0;
+      _out0 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(_0_notification);
+      _1_text = _out0;
+      let _2_sent;
+      let _out1;
+      _out1 = ConfluxRuntime_ConfluxWebSocketCapability.__default.SendWebSocketText(conn, _1_text);
+      _2_sent = _out1;
+      if (!(_2_sent)) {
+        return [ok, view, notifications, errorText];
+      }
+      while (!(AhpSessionClient.__default.IsTerminal(view))) {
+        let _3_open;
+        let _4_isText;
+        let _5_received;
+        let _out2;
         let _out3;
         let _out4;
-        let _out5;
         let _outcollector0 = ConfluxRuntime_ConfluxWebSocketCapability.__default.ReceiveWebSocketText(conn);
-        _out3 = _outcollector0[0];
-        _out4 = _outcollector0[1];
-        _out5 = _outcollector0[2];
-        _4_open = _out3;
-        _5_isText = _out4;
-        _6_text = _out5;
-        if (!(_4_open)) {
+        _out2 = _outcollector0[0];
+        _out3 = _outcollector0[1];
+        _out4 = _outcollector0[2];
+        _3_open = _out2;
+        _4_isText = _out3;
+        _5_received = _out4;
+        if (!(_3_open)) {
           errorText = _dafny.Seq.UnicodeFromString("connection closed during turn");
-          return [ok, notifications, errorText];
+          return [ok, view, notifications, errorText];
         }
-        if (_5_isText) {
-          notifications = _dafny.Seq.Concat(notifications, _dafny.Seq.of(_6_text));
-          let _7_parsed;
-          let _out6;
-          _out6 = ConfluxRuntime_ConfluxJsonRpc.__default.Parse(_6_text);
-          _7_parsed = _out6;
-          if ((_7_parsed).is_Some) {
-            let _source0 = (_7_parsed).dtor_value;
-            Lmatch0: {
-              {
-                if (_source0.is_Notification) {
-                  let _8_rpcMethod = (_source0).rpcMethod;
-                  let _9_params = (_source0).params;
-                  if ((_dafny.areEqual(_8_rpcMethod, _dafny.Seq.UnicodeFromString("action"))) && (_dafny.areEqual(ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(_9_params, _dafny.Seq.UnicodeFromString("channel"))), expectedChannel))) {
-                    let _10_action;
-                    _10_action = ConfluxRuntime_ConfluxCodec.__default.Field(_9_params, _dafny.Seq.UnicodeFromString("action"));
-                    let _11_actionType;
-                    _11_actionType = ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(_10_action, _dafny.Seq.UnicodeFromString("type")));
-                    let _12_turnId;
-                    _12_turnId = ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(_10_action, _dafny.Seq.UnicodeFromString("turnId")));
-                    if ((_dafny.areEqual(_12_turnId, expectedTurnId)) && (((_dafny.areEqual(_11_actionType, _dafny.Seq.UnicodeFromString("chat/turnComplete"))) || (_dafny.areEqual(_11_actionType, _dafny.Seq.UnicodeFromString("chat/turnCancelled")))) || (_dafny.areEqual(_11_actionType, _dafny.Seq.UnicodeFromString("chat/error"))))) {
-                      ok = true;
-                      errorText = _dafny.Seq.UnicodeFromString("");
-                      return [ok, notifications, errorText];
-                    }
-                  }
-                  break Lmatch0;
-                }
-              }
-              {
-              }
-            }
+        if (_4_isText) {
+          notifications = _dafny.Seq.Concat(notifications, _dafny.Seq.of(_5_received));
+          let _6_parsed;
+          let _out5;
+          _out5 = ConfluxRuntime_ConfluxJsonRpc.__default.Parse(_5_received);
+          _6_parsed = _out5;
+          if ((_6_parsed).is_Some) {
+            view = AhpSessionClient.__default.Observe(view, (_6_parsed).dtor_value, expectedChannel, expectedTurnId);
           }
         }
       }
-      return [ok, notifications, errorText];
+      ok = true;
+      errorText = _dafny.Seq.UnicodeFromString("");
+      return [ok, view, notifications, errorText];
+    }
+    static Prompt(conn, state, chatText, promptText, turnId, startedAt) {
+      let ok = false;
+      let next = AhpSessionClient.RuntimeState.Default();
+      let resultText = _dafny.Seq.UnicodeFromString("");
+      let notifications = _dafny.Seq.of();
+      let errorText = _dafny.Seq.UnicodeFromString("");
+      ok = false;
+      next = state;
+      resultText = _dafny.Seq.UnicodeFromString("");
+      notifications = _dafny.Seq.of();
+      errorText = _dafny.Seq.UnicodeFromString("invalid chat");
+      let _0_parsed;
+      let _out0;
+      _out0 = ConfluxRuntime_ConfluxJsonText.__default.ParseJsonChecked(chatText);
+      _0_parsed = _out0;
+      if ((_0_parsed).is_Invalid) {
+        return [ok, next, resultText, notifications, errorText];
+      }
+      let _1_chat;
+      _1_chat = AhpSessionClient.__default.DecodeChat((_0_parsed).dtor_value);
+      let _2_view;
+      _2_view = AhpSessionClient.__default.EmptyTurn();
+      if (((_1_chat).dtor_transport).is_Convenience) {
+        let _3_response = ConfluxRuntime_ConfluxJsonRpc.Message.Default();
+        let _4_received = _dafny.Seq.of();
+        let _5_callError = _dafny.Seq.UnicodeFromString("");
+        let _out1;
+        let _out2;
+        let _out3;
+        let _out4;
+        let _outcollector0 = AhpConnectionRuntime.__default.Call(conn, next, _dafny.Seq.UnicodeFromString("chat/prompt"), AhpSessionClient.__default.PromptParams((_1_chat).dtor_chatId, promptText));
+        _out1 = _outcollector0[0];
+        _out2 = _outcollector0[1];
+        _out3 = _outcollector0[2];
+        _out4 = _outcollector0[3];
+        next = _out1;
+        _3_response = _out2;
+        _4_received = _out3;
+        _5_callError = _out4;
+        notifications = _dafny.Seq.Concat(notifications, _4_received);
+        if (!_dafny.areEqual(_5_callError, _dafny.Seq.UnicodeFromString(""))) {
+          errorText = _5_callError;
+          return [ok, next, resultText, notifications, errorText];
+        }
+        let _source0 = _3_response;
+        Lmatch0: {
+          {
+            if (_source0.is_Failure) {
+              let _6_error = (_source0).error;
+              let _out5;
+              _out5 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(_6_error);
+              errorText = _out5;
+              return [ok, next, resultText, notifications, errorText];
+              break Lmatch0;
+            }
+          }
+          {
+            if (_source0.is_Success) {
+              break Lmatch0;
+            }
+          }
+          {
+            errorText = _dafny.Seq.UnicodeFromString("invalid chat/prompt response");
+            return [ok, next, resultText, notifications, errorText];
+          }
+        }
+        let _out6;
+        _out6 = AhpConnectionRuntime.__default.FoldNotifications(_4_received, (_1_chat).dtor_channel, _dafny.Seq.UnicodeFromString(""));
+        _2_view = _out6;
+      } else {
+        let _7_clientSeq;
+        _7_clientSeq = AhpSessionClient.__default.NextClientSeq(next, (_1_chat).dtor_channel);
+        next = AhpSessionClient.__default.StartTurn(next, (_1_chat).dtor_channel, turnId);
+        let _8_sentOk = false;
+        let _9_received = _dafny.Seq.of();
+        let _10_turnError = _dafny.Seq.UnicodeFromString("");
+        let _out7;
+        let _out8;
+        let _out9;
+        let _out10;
+        let _outcollector1 = AhpConnectionRuntime.__default.DispatchTurn(conn, AhpSessionClient.__default.DispatchParams((_1_chat).dtor_channel, _7_clientSeq, AhpSessionClient.__default.TurnStartedAction(turnId, startedAt, promptText)), (_1_chat).dtor_channel, turnId);
+        _out7 = _outcollector1[0];
+        _out8 = _outcollector1[1];
+        _out9 = _outcollector1[2];
+        _out10 = _outcollector1[3];
+        _8_sentOk = _out7;
+        _2_view = _out8;
+        _9_received = _out9;
+        _10_turnError = _out10;
+        notifications = _dafny.Seq.Concat(notifications, _9_received);
+        next = AhpSessionClient.__default.FinishTurn(next, (_1_chat).dtor_channel);
+        if (!(_8_sentOk)) {
+          errorText = _10_turnError;
+          return [ok, next, resultText, notifications, errorText];
+        }
+      }
+      let _out11;
+      _out11 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(AhpSessionClient.__default.TurnResult((_1_chat).dtor_chatId, _2_view));
+      resultText = _out11;
+      errorText = _dafny.Seq.UnicodeFromString("");
+      ok = true;
+      return [ok, next, resultText, notifications, errorText];
+    }
+    static Cancel(conn, state, chatText) {
+      let ok = false;
+      let next = AhpSessionClient.RuntimeState.Default();
+      let notifications = _dafny.Seq.of();
+      let errorText = _dafny.Seq.UnicodeFromString("");
+      ok = false;
+      next = state;
+      notifications = _dafny.Seq.of();
+      errorText = _dafny.Seq.UnicodeFromString("invalid chat");
+      let _0_parsed;
+      let _out0;
+      _out0 = ConfluxRuntime_ConfluxJsonText.__default.ParseJsonChecked(chatText);
+      _0_parsed = _out0;
+      if ((_0_parsed).is_Invalid) {
+        return [ok, next, notifications, errorText];
+      }
+      let _1_chat;
+      _1_chat = AhpSessionClient.__default.DecodeChat((_0_parsed).dtor_value);
+      if (((_1_chat).dtor_transport).is_Convenience) {
+        let _2_response = ConfluxRuntime_ConfluxJsonRpc.Message.Default();
+        let _3_received = _dafny.Seq.of();
+        let _4_callError = _dafny.Seq.UnicodeFromString("");
+        let _out1;
+        let _out2;
+        let _out3;
+        let _out4;
+        let _outcollector0 = AhpConnectionRuntime.__default.Call(conn, next, _dafny.Seq.UnicodeFromString("chat/cancel"), AhpSessionClient.__default.CancelParams((_1_chat).dtor_chatId));
+        _out1 = _outcollector0[0];
+        _out2 = _outcollector0[1];
+        _out3 = _outcollector0[2];
+        _out4 = _outcollector0[3];
+        next = _out1;
+        _2_response = _out2;
+        _3_received = _out3;
+        _4_callError = _out4;
+        notifications = _dafny.Seq.Concat(notifications, _3_received);
+        if (!_dafny.areEqual(_4_callError, _dafny.Seq.UnicodeFromString(""))) {
+          errorText = _4_callError;
+          return [ok, next, notifications, errorText];
+        }
+        let _source0 = _2_response;
+        Lmatch0: {
+          {
+            if (_source0.is_Failure) {
+              let _5_error = (_source0).error;
+              let _out5;
+              _out5 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(_5_error);
+              errorText = _out5;
+              break Lmatch0;
+            }
+          }
+          {
+            if (_source0.is_Success) {
+              ok = true;
+              errorText = _dafny.Seq.UnicodeFromString("");
+              break Lmatch0;
+            }
+          }
+          {
+            errorText = _dafny.Seq.UnicodeFromString("invalid chat/cancel response");
+          }
+        }
+        return [ok, next, notifications, errorText];
+      }
+      if (!((next).dtor_activeTurns).contains((_1_chat).dtor_channel)) {
+        ok = true;
+        errorText = _dafny.Seq.UnicodeFromString("");
+        return [ok, next, notifications, errorText];
+      }
+      let _6_turnId;
+      _6_turnId = ((next).dtor_activeTurns).get((_1_chat).dtor_channel);
+      let _7_clientSeq;
+      _7_clientSeq = AhpSessionClient.__default.NextClientSeq(next, (_1_chat).dtor_channel);
+      let _8_params;
+      _8_params = AhpSessionClient.__default.DispatchParams((_1_chat).dtor_channel, _7_clientSeq, AhpSessionClient.__default.TurnCancelledAction(_6_turnId));
+      let _9_notification;
+      _9_notification = ConfluxRuntime_ConfluxJsonRpc.__default.NotificationEnvelope(_dafny.Seq.UnicodeFromString("dispatchAction"), _8_params);
+      let _10_text;
+      let _out6;
+      _out6 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(_9_notification);
+      _10_text = _out6;
+      let _11_sent;
+      let _out7;
+      _out7 = ConfluxRuntime_ConfluxWebSocketCapability.__default.SendWebSocketText(conn, _10_text);
+      _11_sent = _out7;
+      if (_11_sent) {
+        next = AhpSessionClient.__default.FinishTurn(AhpSessionClient.__default.StartTurn(next, (_1_chat).dtor_channel, _6_turnId), (_1_chat).dtor_channel);
+        ok = true;
+        errorText = _dafny.Seq.UnicodeFromString("");
+      } else {
+        errorText = _dafny.Seq.UnicodeFromString("dispatchAction cancel send failed");
+      }
+      return [ok, next, notifications, errorText];
     }
     static Close(conn) {
       ConfluxRuntime_ConfluxWebSocketCapability.__default.CloseWebSocket(conn);
@@ -33018,11 +33939,8 @@ class AhpHostClient {
   #url;
   #clientId;
   #conn;
-  #nextId = 1000;
+  #state = AhpConnectionRuntime.__default.InitialState();
   #agents = [];
-  #actions = [];
-  #observers = new Map();
-  #clientSeqByChannel = new Map();
 
   constructor(connectInfo, label = 'ahp-client') {
     if (!connectInfo?.url) throw new AhpClientError('connect-info carries no url');
@@ -33039,7 +33957,6 @@ class AhpHostClient {
         toDafnyString(this.#clientId),
         toDafnyStrings(['ahp-root://']),
       );
-    this.#receiveAll(notifications);
     if (!ok) throw errorFromText(toJsString(errorText));
     this.#conn = conn;
     const result = JSON.parse(toJsString(resultText));
@@ -33050,129 +33967,76 @@ class AhpHostClient {
   }
 
   async request(method, params = {}) {
-    if (this.#conn === undefined) throw new AhpClientError('not connected to an AHP host');
-    const id = this.#nextId++;
-    const [ok, resultText, notifications, errorText] =
-      AhpConnectionRuntime.__default.Request(
+    this.#requireConnection();
+    const [ok, next, resultText, _notifications, errorText] =
+      AhpConnectionRuntime.__default.PublicRequest(
         this.#conn,
-        new BigNumber(id),
+        this.#state,
         toDafnyString(method),
         toDafnyString(JSON.stringify(params)),
       );
-    this.#receiveAll(notifications);
+    this.#state = next;
     if (!ok) throw errorFromText(toJsString(errorText));
     return JSON.parse(toJsString(resultText));
   }
 
   async createChat(provider, cwd, options = {}) {
-    try {
-      return await this.request('chat/create', { provider, cwd });
-    } catch (error) {
-      if (!(error instanceof AhpClientError) || error.code !== -32601) throw error;
-    }
-
-    const sessionId = `ahp-session:/${randomUUID()}`;
-    const workingDirectory = pathToFileURL(cwd).href;
-    let config = options.config ?? {};
-    try {
-      const resolved = await this.request('resolveSessionConfig', {
-        channel: 'ahp-root://',
-        provider,
-        workingDirectory,
-        config,
-      });
-      config = { ...(resolved?.values ?? {}), ...config };
-    } catch (error) {
-      if (!(error instanceof AhpClientError) || error.code !== -32601) throw error;
-    }
-    await this.request('createSession', {
-      channel: sessionId,
-      provider,
-      workingDirectories: [workingDirectory],
-      ...(Object.keys(config).length > 0 ? { config } : {}),
-    });
-    const session = await this.request('subscribe', { channel: sessionId });
-    const chatId = session?.snapshot?.state?.defaultChat;
-    if (typeof chatId !== 'string' || !chatId) {
-      throw new AhpClientError(`session ${sessionId} carries no default chat`);
-    }
-    await this.request('subscribe', { channel: chatId });
-    return { sessionId, chatId, agentId: provider, channel: chatId, transport: 'dispatch-action' };
+    this.#requireConnection();
+    const [ok, next, chatText, _notifications, errorText] =
+      AhpConnectionRuntime.__default.CreateChat(
+        this.#conn,
+        this.#state,
+        toDafnyString(provider),
+        toDafnyString(cwd),
+        toDafnyString(pathToFileURL(cwd).href),
+        toDafnyString(`ahp-session:/${randomUUID()}`),
+        toDafnyString(JSON.stringify(options.config ?? {})),
+      );
+    this.#state = next;
+    if (!ok) throw errorFromText(toJsString(errorText));
+    return JSON.parse(toJsString(chatText));
   }
 
   async attachChat(chat) {
-    if (chat.transport === 'dispatch-action') {
-      await this.request('subscribe', { channel: chat.sessionId });
-      await this.request('subscribe', { channel: chat.channel });
-    }
+    this.#requireConnection();
+    const [ok, next, _notifications, errorText] =
+      AhpConnectionRuntime.__default.AttachChat(
+        this.#conn,
+        this.#state,
+        toDafnyString(JSON.stringify(chat)),
+      );
+    this.#state = next;
+    if (!ok) throw errorFromText(toJsString(errorText));
     return chat;
   }
 
   async prompt(chat, text, onAction) {
-    const before = this.#actions.length;
-    if (onAction) this.#observers.set(chat.channel, onAction);
-    try {
-      if (chat.transport === 'dispatch-action') {
-        if (this.#conn === undefined) throw new AhpClientError('not connected to an AHP host');
-        const turnId = randomUUID();
-        const clientSeq = (this.#clientSeqByChannel.get(chat.channel) ?? 0) + 1;
-        this.#clientSeqByChannel.set(chat.channel, clientSeq);
-        const params = {
-          channel: chat.channel,
-          clientSeq,
-          action: {
-            type: 'chat/turnStarted',
-            turnId,
-            startedAt: new Date().toISOString(),
-            message: { text, origin: { kind: 'user' } },
-          },
-        };
-        const [ok, notifications, errorText] = AhpConnectionRuntime.__default.DispatchAction(
-          this.#conn,
-          toDafnyString(JSON.stringify(params)),
-          toDafnyString(chat.channel),
-          toDafnyString(turnId),
-        );
-        this.#receiveAll(notifications);
-        if (!ok) throw errorFromText(toJsString(errorText));
-      } else {
-        await this.request('chat/prompt', { chatId: chat.chatId, text });
-      }
-    } finally {
-      this.#observers.delete(chat.channel);
-    }
-    const actions = this.#actions.slice(before)
-      .filter((action) => action.channel === chat.channel)
-      .sort((left, right) => left.serverSeq - right.serverSeq);
-    const textContent = actions.map((action) => {
-      if (action.type === 'chat/delta') return action.content ?? '';
-      if (action.type === 'chat/responsePart' && action.rawAction?.part?.kind === 'markdown') {
-        return action.rawAction.part.content ?? '';
-      }
-      return '';
-    }).join('');
-    const reasoningContent = actions.map((action) => {
-      if (action.type === 'chat/reasoning') return action.content ?? '';
-      if (action.type === 'chat/responsePart' && action.rawAction?.part?.kind === 'reasoning') {
-        return action.rawAction.part.content ?? '';
-      }
-      return '';
-    }).join('');
-    const terminal = actions.filter((action) =>
-      action.type === 'chat/turnComplete'
-      || action.type === 'chat/turnCancelled'
-      || action.type === 'chat/error');
-    return {
-      chatId: chat.chatId,
-      text: textContent,
-      reasoning: reasoningContent,
-      actions,
-      outcome: terminal.at(-1)?.type ?? 'chat/incomplete',
-    };
+    this.#requireConnection();
+    const [ok, next, resultText, _notifications, errorText] =
+      AhpConnectionRuntime.__default.Prompt(
+        this.#conn,
+        this.#state,
+        toDafnyString(JSON.stringify(chat)),
+        toDafnyString(text),
+        toDafnyString(randomUUID()),
+        toDafnyString(new Date().toISOString()),
+      );
+    this.#state = next;
+    if (!ok) throw errorFromText(toJsString(errorText));
+    const result = JSON.parse(toJsString(resultText));
+    if (onAction) for (const action of result.actions) onAction(action);
+    return result;
   }
 
   cancel(chat) {
-    void this.request('chat/cancel', { chatId: chat.chatId }).catch(() => undefined);
+    if (this.#conn === undefined) return false;
+    const [ok, next] = AhpConnectionRuntime.__default.Cancel(
+      this.#conn,
+      this.#state,
+      toDafnyString(JSON.stringify(chat)),
+    );
+    this.#state = next;
+    return ok;
   }
 
   close() {
@@ -33180,32 +34044,13 @@ class AhpHostClient {
     this.#conn = undefined;
   }
 
-  #receiveAll(notifications) {
-    for (const raw of notifications) this.#receive(toJsString(raw));
-  }
-
-  #receive(text) {
-    let message;
-    try { message = JSON.parse(text); } catch { return; }
-    if (message.method !== 'action') return;
-    const envelope = message.params;
-    const action = envelope?.action;
-    if (!action || typeof action.type !== 'string') return;
-    const received = {
-      channel: String(envelope?.channel ?? ''),
-      serverSeq: Number(envelope?.serverSeq ?? 0),
-      type: action.type,
-      rawAction: action,
-      ...(typeof action.turnId === 'string' ? { turnId: action.turnId } : {}),
-      ...(typeof action.content === 'string' ? { content: action.content } : {}),
-    };
-    this.#actions.push(received);
-    try { this.#observers.get(received.channel)?.(received); } catch {}
+  #requireConnection() {
+    if (this.#conn === undefined) throw new AhpClientError('not connected to an AHP host');
   }
 }
 
 module.exports = {
   AhpClientError,
   AhpHostClient,
-  verified: { AhpConnection, AhpConnectionRuntime, Client, Version },
+  verified: { AhpConnection, AhpConnectionRuntime, AhpSessionClient, Client, Version },
 };

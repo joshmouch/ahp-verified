@@ -9,7 +9,7 @@ export interface AhpChat {
   readonly chatId: string;
   readonly agentId: string;
   readonly channel: string;
-  readonly transport?: 'dispatch-action';
+  readonly transport: 'chat-methods' | 'dispatch-action';
 }
 
 export interface AhpCreateChatOptions {
@@ -46,13 +46,14 @@ export class AhpHostClient {
   createChat(provider: string, cwd: string, options?: AhpCreateChatOptions): Promise<AhpChat>;
   attachChat(chat: AhpChat): Promise<AhpChat>;
   prompt(chat: AhpChat, text: string, onAction?: (action: AhpAction) => void): Promise<AhpTurnResult>;
-  cancel(chat: AhpChat): void;
+  cancel(chat: AhpChat): boolean;
   close(): void;
 }
 
 export const verified: {
   readonly AhpConnection: unknown;
   readonly AhpConnectionRuntime: unknown;
+  readonly AhpSessionClient: unknown;
   readonly Client: unknown;
   readonly Version: unknown;
 };

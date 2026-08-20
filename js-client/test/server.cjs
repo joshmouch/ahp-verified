@@ -103,7 +103,17 @@ server.on('connection', (socket) => {
       }));
       socket.send(JSON.stringify({
         jsonrpc: '2.0', method: 'action',
+        params: { channel: request.params.channel, serverSeq: 1,
+          action: { type: 'chat/delta', turnId: action.turnId, content: 'SHOULD-DROP' } },
+      }));
+      socket.send(JSON.stringify({
+        jsonrpc: '2.0', method: 'action',
         params: { channel: request.params.channel, serverSeq: 2,
+          action: { type: 'chat/reasoning', turnId: action.turnId, content: 'verified-reasoning' } },
+      }));
+      socket.send(JSON.stringify({
+        jsonrpc: '2.0', method: 'action',
+        params: { channel: request.params.channel, serverSeq: 3,
           action: { type: 'chat/turnComplete', turnId: action.turnId } },
       }));
       return;
@@ -119,6 +129,11 @@ server.on('connection', (socket) => {
         params: { channel: 'ahp-chat:/c1', serverSeq: 2,
           action: { type: 'chat/turnComplete', turnId: 't1' } },
       }));
+      socket.send(JSON.stringify({ jsonrpc: '2.0', id: request.id, result: {} }));
+      return;
+    }
+    if (request.method === 'chat/cancel') {
+      if (request.params.chatId !== 'c1') process.exit(26);
       socket.send(JSON.stringify({ jsonrpc: '2.0', id: request.id, result: {} }));
       return;
     }
