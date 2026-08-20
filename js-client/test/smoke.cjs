@@ -44,6 +44,7 @@ async function main() {
     assert.equal(standardTurn.text, 'VERIFIED-STANDARD-AHP-OK');
     assert.equal(standardTurn.outcome, 'chat/turnComplete');
     assert.deepEqual(standardObserved, ['chat/delta', 'chat/turnComplete']);
+    assert.equal(standardTurn.actions[0].rawAction.content, 'VERIFIED-STANDARD-AHP-OK');
     standard.close();
   } finally {
     server.kill();

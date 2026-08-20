@@ -131,18 +131,28 @@ class AhpHostClient {
     const actions = this.#actions.slice(before)
       .filter((action) => action.channel === chat.channel)
       .sort((left, right) => left.serverSeq - right.serverSeq);
-    const join = (type) => actions
-      .filter((action) => action.type === type)
-      .map((action) => action.content ?? '')
-      .join('');
+    const textContent = actions.map((action) => {
+      if (action.type === 'chat/delta') return action.content ?? '';
+      if (action.type === 'chat/responsePart' && action.rawAction?.part?.kind === 'markdown') {
+        return action.rawAction.part.content ?? '';
+      }
+      return '';
+    }).join('');
+    const reasoningContent = actions.map((action) => {
+      if (action.type === 'chat/reasoning') return action.content ?? '';
+      if (action.type === 'chat/responsePart' && action.rawAction?.part?.kind === 'reasoning') {
+        return action.rawAction.part.content ?? '';
+      }
+      return '';
+    }).join('');
     const terminal = actions.filter((action) =>
       action.type === 'chat/turnComplete'
       || action.type === 'chat/turnCancelled'
       || action.type === 'chat/error');
     return {
       chatId: chat.chatId,
-      text: join('chat/delta'),
-      reasoning: join('chat/reasoning'),
+      text: textContent,
+      reasoning: reasoningContent,
       actions,
       outcome: terminal.at(-1)?.type ?? 'chat/incomplete',
     };
@@ -172,6 +182,7 @@ class AhpHostClient {
       channel: String(envelope?.channel ?? ''),
       serverSeq: Number(envelope?.serverSeq ?? 0),
       type: action.type,
+      rawAction: action,
       ...(typeof action.turnId === 'string' ? { turnId: action.turnId } : {}),
       ...(typeof action.content === 'string' ? { content: action.content } : {}),
     };
