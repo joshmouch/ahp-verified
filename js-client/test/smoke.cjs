@@ -76,6 +76,7 @@ async function main() {
       cancellable.prompt(cancellableChat, 'concurrent turn'),
       /turn already active/,
     );
+    await new Promise((resolve) => setTimeout(resolve, 75));
     assert.equal(cancellable.cancel(cancellableChat), true);
     const cancelledTurn = await cancelledPromise;
     assert.equal(cancelledTurn.outcome, 'chat/turnCancelled');

@@ -130,8 +130,9 @@ class AhpHostClient {
     }
 
     // BeginPrompt has already recorded the active turn in the extracted state.
-    // Yield once before receiving so a caller can synchronously invoke cancel()
-    // against that exact state, then yield after every received frame.
+    // BeginPrompt and every bounded ReceiveTurn return to this interop loop, so
+    // cancellation can run against the exact extracted active-turn state even
+    // when the host remains silent.
     await yieldToCaller();
     while (currentPending) {
       const [received, receivedState, stillPending, nextView, nextResult,

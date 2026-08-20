@@ -19643,18 +19643,26 @@ ConfluxWebSocketCapability.__default = (function() {
     const connections = new Map();
     let nextHandle = 1;
     const send = (id, value) => port.postMessage({ id, value });
-    const closed = { open: false, isText: false, text: "" };
+    const closed = { open: false, available: false, isText: false, text: "" };
+    const idle = { open: true, available: false, isText: false, text: "" };
 
     function deliver(state, value) {
       const waiter = state.waiters.shift();
-      if (waiter !== undefined) send(waiter, value);
+      if (waiter !== undefined) {
+        if (waiter.timer !== undefined) clearTimeout(waiter.timer);
+        send(waiter.id, value);
+      }
       else state.messages.push(value);
     }
 
     function closeState(state) {
       if (!state.open) return;
       state.open = false;
-      while (state.waiters.length) send(state.waiters.shift(), closed);
+      while (state.waiters.length) {
+        const waiter = state.waiters.shift();
+        if (waiter.timer !== undefined) clearTimeout(waiter.timer);
+        send(waiter.id, closed);
+      }
     }
 
     port.on("message", message => {
@@ -19675,7 +19683,7 @@ ConfluxWebSocketCapability.__default = (function() {
         });
         socket.addEventListener("message", event => {
           const isText = typeof event.data === "string";
-          deliver(state, { open: true, isText, text: isText ? event.data : "" });
+          deliver(state, { open: true, available: true, isText, text: isText ? event.data : "" });
         });
         socket.addEventListener("close", () => {
           if (!settled) { settled = true; send(id, { connected: false, conn: -1 }); }
@@ -19690,7 +19698,23 @@ ConfluxWebSocketCapability.__default = (function() {
         if (!state) send(id, closed);
         else if (state.messages.length) send(id, state.messages.shift());
         else if (!state.open) send(id, closed);
-        else state.waiters.push(id);
+        else state.waiters.push({ id });
+      } else if (op === "receiveFor") {
+        const state = connections.get(message.conn);
+        if (!state) send(id, closed);
+        else if (state.messages.length) send(id, state.messages.shift());
+        else if (!state.open) send(id, closed);
+        else {
+          const waiter = { id, timer: undefined };
+          waiter.timer = setTimeout(() => {
+            const index = state.waiters.indexOf(waiter);
+            if (index >= 0) {
+              state.waiters.splice(index, 1);
+              send(id, idle);
+            }
+          }, Math.max(0, Number(message.waitMs) || 0));
+          state.waiters.push(waiter);
+        }
       } else if (op === "send") {
         const state = connections.get(message.conn);
         if (!state || !state.open || state.socket.readyState !== WebSocket.OPEN) send(id, false);
@@ -19750,6 +19774,10 @@ ConfluxWebSocketCapability.__default = (function() {
   module.ReceiveWebSocketText = function(conn) {
     const value = request("receive", { conn: toNumber(conn) });
     return [value.open, value.isText, fromString(value.text)];
+  };
+  module.ReceiveWebSocketTextFor = function(conn, waitMs) {
+    const value = request("receiveFor", { conn: toNumber(conn), waitMs: toNumber(waitMs) });
+    return [value.open, value.available, value.isText, fromString(value.text)];
   };
   module.SendWebSocketText = function(conn, text) {
     return request("send", { conn: toNumber(conn), text: toString(text) });
@@ -33794,40 +33822,53 @@ let AhpConnectionRuntime = (function() {
         return [ok, next, pending, nextView, resultText, notifications, errorText];
       }
       let _2_open;
-      let _3_isText;
-      let _4_received;
+      let _3_available;
+      let _4_isText;
+      let _5_received;
       let _out1;
       let _out2;
       let _out3;
-      let _outcollector0 = ConfluxRuntime_ConfluxWebSocketCapability.__default.ReceiveWebSocketText(conn);
+      let _out4;
+      let _outcollector0 = ConfluxRuntime_ConfluxWebSocketCapability.__default.ReceiveWebSocketTextFor(conn, new BigNumber(25));
       _out1 = _outcollector0[0];
       _out2 = _outcollector0[1];
       _out3 = _outcollector0[2];
+      _out4 = _outcollector0[3];
       _2_open = _out1;
-      _3_isText = _out2;
-      _4_received = _out3;
+      _3_available = _out2;
+      _4_isText = _out3;
+      _5_received = _out4;
       if (!(_2_open)) {
         next = AhpSessionClient.__default.FinishTurn(next, (_1_chat).dtor_channel);
         errorText = _dafny.Seq.UnicodeFromString("connection closed during turn");
         return [ok, next, pending, nextView, resultText, notifications, errorText];
       }
-      if (_3_isText) {
-        notifications = _dafny.Seq.of(_4_received);
-        let _5_parsed;
-        let _out4;
-        _out4 = ConfluxRuntime_ConfluxJsonRpc.__default.Parse(_4_received);
-        _5_parsed = _out4;
-        if ((_5_parsed).is_Some) {
-          nextView = AhpSessionClient.__default.Observe(view, (_5_parsed).dtor_value, (_1_chat).dtor_channel, turnId);
+      if (!(_3_available)) {
+        pending = true;
+        let _out5;
+        _out5 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(AhpSessionClient.__default.TurnResult((_1_chat).dtor_chatId, nextView));
+        resultText = _out5;
+        errorText = _dafny.Seq.UnicodeFromString("");
+        ok = true;
+        return [ok, next, pending, nextView, resultText, notifications, errorText];
+      }
+      if (_4_isText) {
+        notifications = _dafny.Seq.of(_5_received);
+        let _6_parsed;
+        let _out6;
+        _out6 = ConfluxRuntime_ConfluxJsonRpc.__default.Parse(_5_received);
+        _6_parsed = _out6;
+        if ((_6_parsed).is_Some) {
+          nextView = AhpSessionClient.__default.Observe(view, (_6_parsed).dtor_value, (_1_chat).dtor_channel, turnId);
         }
       }
       pending = !(AhpSessionClient.__default.IsTerminal(nextView));
       if (!(pending)) {
         next = AhpSessionClient.__default.FinishTurn(next, (_1_chat).dtor_channel);
       }
-      let _out5;
-      _out5 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(AhpSessionClient.__default.TurnResult((_1_chat).dtor_chatId, nextView));
-      resultText = _out5;
+      let _out7;
+      _out7 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(AhpSessionClient.__default.TurnResult((_1_chat).dtor_chatId, nextView));
+      resultText = _out7;
       errorText = _dafny.Seq.UnicodeFromString("");
       ok = true;
       return [ok, next, pending, nextView, resultText, notifications, errorText];
@@ -34066,8 +34107,9 @@ class AhpHostClient {
     }
 
     // BeginPrompt has already recorded the active turn in the extracted state.
-    // Yield once before receiving so a caller can synchronously invoke cancel()
-    // against that exact state, then yield after every received frame.
+    // BeginPrompt and every bounded ReceiveTurn return to this interop loop, so
+    // cancellation can run against the exact extracted active-turn state even
+    // when the host remains silent.
     await yieldToCaller();
     while (currentPending) {
       const [received, receivedState, stillPending, nextView, nextResult,
