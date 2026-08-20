@@ -29,11 +29,27 @@ async function main() {
     assert.equal(turn.outcome, 'chat/turnComplete');
     assert.deepEqual(observed, ['chat/delta', 'chat/turnComplete']);
     client.close();
+
+    const standard = new AhpHostClient({ url: 'ws://127.0.0.1:49514' }, 'standard-smoke');
+    await standard.connect();
+    const standardChat = await standard.createChat('copilotcli', '/tmp');
+    assert.equal(standardChat.transport, 'dispatch-action');
+    assert.equal(standardChat.chatId, 'ahp-chat:/standard');
+    const standardObserved = [];
+    const standardTurn = await standard.prompt(
+      standardChat,
+      'standard hello',
+      (action) => standardObserved.push(action.type),
+    );
+    assert.equal(standardTurn.text, 'VERIFIED-STANDARD-AHP-OK');
+    assert.equal(standardTurn.outcome, 'chat/turnComplete');
+    assert.deepEqual(standardObserved, ['chat/delta', 'chat/turnComplete']);
+    standard.close();
   } finally {
     server.kill();
   }
 
-  console.log('SMOKE PASSED — extracted connect/request/turn and -32005 recovery');
+  console.log('SMOKE PASSED — extracted connect/request and both turn surfaces with -32005 recovery');
 }
 
 main().catch((error) => {

@@ -1,4 +1,5 @@
 const { randomUUID } = require('node:crypto');
+const { pathToFileURL } = require('node:url');
 
 const toDafnyString = (value) => _dafny.Seq.UnicodeFromString(String(value));
 const toDafnyStrings = (values) => _dafny.Seq.from(values, toDafnyString);
@@ -30,6 +31,7 @@ class AhpHostClient {
   #agents = [];
   #actions = [];
   #observers = new Map();
+  #clientSeqByChannel = new Map();
 
   constructor(connectInfo, label = 'ahp-client') {
     if (!connectInfo?.url) throw new AhpClientError('connect-info carries no url');
@@ -72,14 +74,57 @@ class AhpHostClient {
   }
 
   async createChat(provider, cwd) {
-    return await this.request('chat/create', { provider, cwd });
+    try {
+      return await this.request('chat/create', { provider, cwd });
+    } catch (error) {
+      if (!(error instanceof AhpClientError) || error.code !== -32601) throw error;
+    }
+
+    const sessionId = `ahp-session:/${randomUUID()}`;
+    await this.request('createSession', {
+      channel: sessionId,
+      provider,
+      workingDirectories: [pathToFileURL(cwd).href],
+    });
+    const session = await this.request('subscribe', { channel: sessionId });
+    const chatId = session?.snapshot?.state?.defaultChat;
+    if (typeof chatId !== 'string' || !chatId) {
+      throw new AhpClientError(`session ${sessionId} carries no default chat`);
+    }
+    await this.request('subscribe', { channel: chatId });
+    return { sessionId, chatId, agentId: provider, channel: chatId, transport: 'dispatch-action' };
   }
 
   async prompt(chat, text, onAction) {
     const before = this.#actions.length;
     if (onAction) this.#observers.set(chat.channel, onAction);
     try {
-      await this.request('chat/prompt', { chatId: chat.chatId, text });
+      if (chat.transport === 'dispatch-action') {
+        if (this.#conn === undefined) throw new AhpClientError('not connected to an AHP host');
+        const turnId = randomUUID();
+        const clientSeq = (this.#clientSeqByChannel.get(chat.channel) ?? 0) + 1;
+        this.#clientSeqByChannel.set(chat.channel, clientSeq);
+        const params = {
+          channel: chat.channel,
+          clientSeq,
+          action: {
+            type: 'chat/turnStarted',
+            turnId,
+            startedAt: new Date().toISOString(),
+            message: { text, origin: { kind: 'user' } },
+          },
+        };
+        const [ok, notifications, errorText] = AhpConnectionRuntime.__default.DispatchAction(
+          this.#conn,
+          toDafnyString(JSON.stringify(params)),
+          toDafnyString(chat.channel),
+          toDafnyString(turnId),
+        );
+        this.#receiveAll(notifications);
+        if (!ok) throw errorFromText(toJsString(errorText));
+      } else {
+        await this.request('chat/prompt', { chatId: chat.chatId, text });
+      }
     } finally {
       this.#observers.delete(chat.channel);
     }

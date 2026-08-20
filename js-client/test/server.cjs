@@ -33,9 +33,58 @@ server.on('connection', (socket) => {
       return;
     }
     if (request.method === 'chat/create') {
+      if (request.params.provider === 'copilotcli') {
+        socket.send(JSON.stringify({
+          jsonrpc: '2.0', id: request.id,
+          error: { code: -32601, message: 'Method not found: chat/create' },
+        }));
+        return;
+      }
       socket.send(JSON.stringify({
         jsonrpc: '2.0', id: request.id,
         result: { sessionId: 's1', chatId: 'c1', agentId: 'grok', channel: 'ahp-chat:/c1' },
+      }));
+      return;
+    }
+    if (request.method === 'createSession') {
+      if (request.params.provider !== 'copilotcli'
+          || request.params.channel.indexOf('ahp-session:/') !== 0
+          || JSON.stringify(request.params.workingDirectories) !== JSON.stringify(['file:///tmp'])) {
+        process.exit(23);
+      }
+      socket.send(JSON.stringify({ jsonrpc: '2.0', id: request.id, result: null }));
+      return;
+    }
+    if (request.method === 'subscribe') {
+      const channel = request.params.channel;
+      const state = channel.indexOf('ahp-session:/') === 0
+        ? { defaultChat: 'ahp-chat:/standard' }
+        : { status: 'idle' };
+      socket.send(JSON.stringify({
+        jsonrpc: '2.0', id: request.id,
+        result: { snapshot: { resource: channel, state } },
+      }));
+      return;
+    }
+    if (request.method === 'dispatchAction') {
+      const action = request.params.action;
+      if (request.id !== undefined
+          || request.params.channel !== 'ahp-chat:/standard'
+          || request.params.clientSeq !== 1
+          || action.type !== 'chat/turnStarted'
+          || action.message.text !== 'standard hello'
+          || action.message.origin.kind !== 'user') {
+        process.exit(24);
+      }
+      socket.send(JSON.stringify({
+        jsonrpc: '2.0', method: 'action',
+        params: { channel: request.params.channel, serverSeq: 1,
+          action: { type: 'chat/delta', turnId: action.turnId, content: 'VERIFIED-STANDARD-AHP-OK' } },
+      }));
+      socket.send(JSON.stringify({
+        jsonrpc: '2.0', method: 'action',
+        params: { channel: request.params.channel, serverSeq: 2,
+          action: { type: 'chat/turnComplete', turnId: action.turnId } },
       }));
       return;
     }

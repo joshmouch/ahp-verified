@@ -9,6 +9,7 @@ export interface AhpChat {
   readonly chatId: string;
   readonly agentId: string;
   readonly channel: string;
+  readonly transport?: 'dispatch-action';
 }
 
 export interface AhpAction {

@@ -32883,6 +32883,89 @@ let AhpConnectionRuntime = (function() {
       }
       return [ok, resultText, notifications, errorText];
     }
+    static DispatchAction(conn, paramsText, expectedChannel, expectedTurnId) {
+      let ok = false;
+      let notifications = _dafny.Seq.of();
+      let errorText = _dafny.Seq.UnicodeFromString("");
+      ok = false;
+      notifications = _dafny.Seq.of();
+      errorText = _dafny.Seq.UnicodeFromString("invalid dispatchAction params");
+      let _0_parsedParams;
+      let _out0;
+      _out0 = ConfluxRuntime_ConfluxJsonText.__default.ParseJsonChecked(paramsText);
+      _0_parsedParams = _out0;
+      if ((_0_parsedParams).is_Invalid) {
+        return [ok, notifications, errorText];
+      }
+      let _1_notification;
+      _1_notification = ConfluxRuntime_ConfluxJsonRpc.__default.NotificationEnvelope(_dafny.Seq.UnicodeFromString("dispatchAction"), (_0_parsedParams).dtor_value);
+      let _2_notificationText;
+      let _out1;
+      _out1 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(_1_notification);
+      _2_notificationText = _out1;
+      let _3_sent;
+      let _out2;
+      _out2 = ConfluxRuntime_ConfluxWebSocketCapability.__default.SendWebSocketText(conn, _2_notificationText);
+      _3_sent = _out2;
+      if (!(_3_sent)) {
+        errorText = _dafny.Seq.UnicodeFromString("dispatchAction send failed");
+        return [ok, notifications, errorText];
+      }
+      while (true) {
+        let _4_open;
+        let _5_isText;
+        let _6_text;
+        let _out3;
+        let _out4;
+        let _out5;
+        let _outcollector0 = ConfluxRuntime_ConfluxWebSocketCapability.__default.ReceiveWebSocketText(conn);
+        _out3 = _outcollector0[0];
+        _out4 = _outcollector0[1];
+        _out5 = _outcollector0[2];
+        _4_open = _out3;
+        _5_isText = _out4;
+        _6_text = _out5;
+        if (!(_4_open)) {
+          errorText = _dafny.Seq.UnicodeFromString("connection closed during turn");
+          return [ok, notifications, errorText];
+        }
+        if (_5_isText) {
+          notifications = _dafny.Seq.Concat(notifications, _dafny.Seq.of(_6_text));
+          let _7_parsed;
+          let _out6;
+          _out6 = ConfluxRuntime_ConfluxJsonRpc.__default.Parse(_6_text);
+          _7_parsed = _out6;
+          if ((_7_parsed).is_Some) {
+            let _source0 = (_7_parsed).dtor_value;
+            Lmatch0: {
+              {
+                if (_source0.is_Notification) {
+                  let _8_rpcMethod = (_source0).rpcMethod;
+                  let _9_params = (_source0).params;
+                  if ((_dafny.areEqual(_8_rpcMethod, _dafny.Seq.UnicodeFromString("action"))) && (_dafny.areEqual(ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(_9_params, _dafny.Seq.UnicodeFromString("channel"))), expectedChannel))) {
+                    let _10_action;
+                    _10_action = ConfluxRuntime_ConfluxCodec.__default.Field(_9_params, _dafny.Seq.UnicodeFromString("action"));
+                    let _11_actionType;
+                    _11_actionType = ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(_10_action, _dafny.Seq.UnicodeFromString("type")));
+                    let _12_turnId;
+                    _12_turnId = ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(_10_action, _dafny.Seq.UnicodeFromString("turnId")));
+                    if ((_dafny.areEqual(_12_turnId, expectedTurnId)) && (((_dafny.areEqual(_11_actionType, _dafny.Seq.UnicodeFromString("chat/turnComplete"))) || (_dafny.areEqual(_11_actionType, _dafny.Seq.UnicodeFromString("chat/turnCancelled")))) || (_dafny.areEqual(_11_actionType, _dafny.Seq.UnicodeFromString("chat/error"))))) {
+                      ok = true;
+                      errorText = _dafny.Seq.UnicodeFromString("");
+                      return [ok, notifications, errorText];
+                    }
+                  }
+                  break Lmatch0;
+                }
+              }
+              {
+              }
+            }
+          }
+        }
+      }
+      return [ok, notifications, errorText];
+    }
     static Close(conn) {
       ConfluxRuntime_ConfluxWebSocketCapability.__default.CloseWebSocket(conn);
       return;
@@ -32892,6 +32975,7 @@ let AhpConnectionRuntime = (function() {
 })(); // end of module AhpConnectionRuntime
 
 const { randomUUID } = require('node:crypto');
+const { pathToFileURL } = require('node:url');
 
 const toDafnyString = (value) => _dafny.Seq.UnicodeFromString(String(value));
 const toDafnyStrings = (values) => _dafny.Seq.from(values, toDafnyString);
@@ -32923,6 +33007,7 @@ class AhpHostClient {
   #agents = [];
   #actions = [];
   #observers = new Map();
+  #clientSeqByChannel = new Map();
 
   constructor(connectInfo, label = 'ahp-client') {
     if (!connectInfo?.url) throw new AhpClientError('connect-info carries no url');
@@ -32965,14 +33050,57 @@ class AhpHostClient {
   }
 
   async createChat(provider, cwd) {
-    return await this.request('chat/create', { provider, cwd });
+    try {
+      return await this.request('chat/create', { provider, cwd });
+    } catch (error) {
+      if (!(error instanceof AhpClientError) || error.code !== -32601) throw error;
+    }
+
+    const sessionId = `ahp-session:/${randomUUID()}`;
+    await this.request('createSession', {
+      channel: sessionId,
+      provider,
+      workingDirectories: [pathToFileURL(cwd).href],
+    });
+    const session = await this.request('subscribe', { channel: sessionId });
+    const chatId = session?.snapshot?.state?.defaultChat;
+    if (typeof chatId !== 'string' || !chatId) {
+      throw new AhpClientError(`session ${sessionId} carries no default chat`);
+    }
+    await this.request('subscribe', { channel: chatId });
+    return { sessionId, chatId, agentId: provider, channel: chatId, transport: 'dispatch-action' };
   }
 
   async prompt(chat, text, onAction) {
     const before = this.#actions.length;
     if (onAction) this.#observers.set(chat.channel, onAction);
     try {
-      await this.request('chat/prompt', { chatId: chat.chatId, text });
+      if (chat.transport === 'dispatch-action') {
+        if (this.#conn === undefined) throw new AhpClientError('not connected to an AHP host');
+        const turnId = randomUUID();
+        const clientSeq = (this.#clientSeqByChannel.get(chat.channel) ?? 0) + 1;
+        this.#clientSeqByChannel.set(chat.channel, clientSeq);
+        const params = {
+          channel: chat.channel,
+          clientSeq,
+          action: {
+            type: 'chat/turnStarted',
+            turnId,
+            startedAt: new Date().toISOString(),
+            message: { text, origin: { kind: 'user' } },
+          },
+        };
+        const [ok, notifications, errorText] = AhpConnectionRuntime.__default.DispatchAction(
+          this.#conn,
+          toDafnyString(JSON.stringify(params)),
+          toDafnyString(chat.channel),
+          toDafnyString(turnId),
+        );
+        this.#receiveAll(notifications);
+        if (!ok) throw errorFromText(toJsString(errorText));
+      } else {
+        await this.request('chat/prompt', { chatId: chat.chatId, text });
+      }
     } finally {
       this.#observers.delete(chat.channel);
     }
