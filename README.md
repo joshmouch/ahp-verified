@@ -8,7 +8,10 @@
 
 The shipped code in every language is the *same proven artifact*, not N independent hand-written re-interpretations. This is a third-party/community project by Joshua Mouch. It is **not** an official Microsoft product.
 
-> **This is a reducer core, not a client.** There is no transport here — no WebSocket, no dialer, no connection lifecycle, no session negotiation. What is proven and shipped is the state-transition layer: given a state and an action, what is the next state. If you are looking for something that talks to an agent host over a wire, this is not it; this is the piece such a client would sit on top of.
+> **`@open-agency/ahp` is the reducer core.** The sibling
+> **`@open-agency/ahp-client`** package is the extracted WebSocket client: it
+> owns connection lifecycle, JSON-RPC negotiation, ordered receive, and
+> `-32005` recovery through the verified Dafny client and Conflux runtime.
 
 > **Before you weigh any number below, read [REPRODUCIBILITY.md](REPRODUCIBILITY.md).** The corpus results and the extracted code are checkable from a clean clone in one command. **The proofs are not** — re-running them needs the Conflux runtime library, which is the author's own work and is not published yet. That document states exactly which claims are checkable, which are not, and what is vendored into the published packages.
 
@@ -103,6 +106,7 @@ The first checks the pinned corpus and runs it through the extracted code in fou
 |---|---|---|
 | **.NET** | `Ahp.Core.Verified` 0.1.0 | Artifact built — self-contained `net8.0` assembly, no external dependencies. Released on GitHub; registry publish pending credentials. |
 | **JavaScript** | `@open-agency/ahp` 0.1.0 | Artifact built, smoke test **148/148** green. Released on GitHub; registry publish pending credentials. |
+| **JavaScript client** | `@open-agency/ahp-client` 0.1.0 | Artifact built; real WebSocket turn and out-of-ladder `-32005` recovery smoke green. Registry publish pending credentials. |
 | **Python** | `agent-host-protocol` 0.1.0 | Wheel + sdist built, smoke test **148/148** green. Released on GitHub; registry publish pending credentials. |
 | **Go** | `github.com/joshmouch/ahp-verified/go` | Builds and runs the corpus **148/148** green. Tagged `go/v0.1.0`. Requires a build flag — see below. |
 | **Rust** | `ahp-verified` (crates.io) | Idiomatic crate — the extraction target *is* Rust, so no FFI and no `unsafe` in the hand-written layer. `cargo test` green. See [rust/](rust/). |
@@ -112,6 +116,7 @@ The first checks the pinned corpus and runs it through the extracted code in fou
 ```bash
 dotnet add package Ahp.Core.Verified          # .NET
 npm install @open-agency/ahp                  # JavaScript
+npm install @open-agency/ahp-client           # JavaScript WebSocket client
 pip install agent-host-protocol               # Python
 go get github.com/joshmouch/ahp-verified/go            # Go
 ```

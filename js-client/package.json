@@ -1,0 +1,35 @@
+{
+  "name": "@open-agency/ahp-client",
+  "version": "0.1.0",
+  "description": "Verified Agent Host Protocol WebSocket client extracted from Dafny.",
+  "license": "MIT",
+  "author": "Joshua Mouch <josh@mouch.name>",
+  "main": "dist/client.cjs",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "require": "./dist/client.cjs",
+      "default": "./dist/client.cjs"
+    }
+  },
+  "files": [
+    "dist/client.cjs",
+    "index.d.ts",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "bignumber.js": "^9.3.1"
+  },
+  "devDependencies": {
+    "ws": "^8.18.3"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node test/smoke.cjs"
+  }
+}

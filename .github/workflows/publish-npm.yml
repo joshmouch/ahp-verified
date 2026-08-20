@@ -1,7 +1,7 @@
 name: Publish npm
 # MANUAL trigger. Needs secret NPM_TOKEN and the @open-agency scope.
-# CI never rebuilds dist/ahp.cjs — regenerating requires Dafny plus a private runtime
-# dependency. The committed bundle is the product and is what ships.
+# CI never rebuilds the committed bundles — regenerating requires Dafny plus a
+# private runtime dependency. Each committed bundle is the product that ships.
 on:
   workflow_dispatch:
     inputs:
@@ -13,15 +13,18 @@ permissions: { contents: read, id-token: write }
 jobs:
   publish:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: [js, js-client]
     environment: npm
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '20', registry-url: 'https://registry.npmjs.org' }
-      - run: cd js && npm install --ignore-scripts
+      - run: cd ${{ matrix.package }} && npm install --ignore-scripts
       - name: Test the committed bundle
-        run: cd js && npm test
+        run: cd ${{ matrix.package }} && npm test
       - name: Publish
         if: ${{ inputs.confirm == 'publish' }}
-        run: cd js && npm publish --access public --provenance
+        run: cd ${{ matrix.package }} && npm publish --access public --provenance
         env: { NODE_AUTH_TOKEN: '${{ secrets.NPM_TOKEN }}' }

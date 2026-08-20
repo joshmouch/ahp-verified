@@ -71,6 +71,32 @@ jobs:
         working-directory: js
         run: npm test
 
+  # The sibling verified client ships its committed extracted WebSocket bundle.
+  # Its smoke host first rejects the core roster with -32005, advertises an
+  # out-of-ladder version, then requires the retry to offer exactly that value
+  # before it permits a real turn.
+  javascript-client:
+    name: js-client (${{ matrix.os }}, node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: ['20', '22']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: js-client/package-lock.json
+      - name: Install
+        working-directory: js-client
+        run: npm ci --ignore-scripts
+      - name: Verified connection smoke
+        working-directory: js-client
+        run: npm test
+
   # ---------------------------------------------------------------------------
   # Go — two traps, both load-bearing. See go/BUILDING.md.
   #
