@@ -32582,6 +32582,9 @@ let AhpSessionClient = (function() {
     static NextClientSeq(state, channel) {
       return (((((state).dtor_clientSeqs).contains(channel)) ? (((state).dtor_clientSeqs).get(channel)) : (_dafny.ZERO))).plus(_dafny.ONE);
     };
+    static CanStartTurn(state, channel) {
+      return !((state).dtor_activeTurns).contains(channel);
+    };
     static StartTurn(state, channel, turnId) {
       return AhpSessionClient.RuntimeState.create_RuntimeState((state).dtor_nextId, ((state).dtor_clientSeqs).update(channel, AhpSessionClient.__default.NextClientSeq(state, channel)), ((state).dtor_activeTurns).update(channel, turnId));
     };
@@ -33731,6 +33734,10 @@ let AhpConnectionRuntime = (function() {
         ok = true;
         return [ok, next, pending, view, resultText, notifications, errorText];
       } else {
+        if (!(AhpSessionClient.__default.CanStartTurn(next, (_1_chat).dtor_channel))) {
+          errorText = _dafny.Seq.UnicodeFromString("turn already active");
+          return [ok, next, pending, view, resultText, notifications, errorText];
+        }
         let _6_clientSeq;
         _6_clientSeq = AhpSessionClient.__default.NextClientSeq(next, (_1_chat).dtor_channel);
         next = AhpSessionClient.__default.StartTurn(next, (_1_chat).dtor_channel, turnId);

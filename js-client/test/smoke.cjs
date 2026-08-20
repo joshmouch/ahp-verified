@@ -72,6 +72,10 @@ async function main() {
       'cancel me',
       (action) => cancelObserved.push(action.type),
     );
+    await assert.rejects(
+      cancellable.prompt(cancellableChat, 'concurrent turn'),
+      /turn already active/,
+    );
     assert.equal(cancellable.cancel(cancellableChat), true);
     const cancelledTurn = await cancelledPromise;
     assert.equal(cancelledTurn.outcome, 'chat/turnCancelled');
