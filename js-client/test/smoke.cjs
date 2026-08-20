@@ -54,7 +54,7 @@ async function main() {
     server.kill();
   }
 
-  console.log('SMOKE PASSED — extracted connect/request and both turn surfaces with -32005 recovery');
+  console.log('SMOKE PASSED — extracted connect/request, both turn surfaces, and reconnecting -32005 recovery');
 }
 
 main().catch((error) => {

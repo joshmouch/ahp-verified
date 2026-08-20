@@ -32790,16 +32790,31 @@ let AhpConnectionRuntime = (function() {
                 ConfluxRuntime_ConfluxWebSocketCapability.__default.CloseWebSocket(conn);
                 return [ok, conn, resultText, notifications, errorText];
               }
+              ConfluxRuntime_ConfluxWebSocketCapability.__default.CloseWebSocket(conn);
+              let _12_reconnected;
+              let _13_nextHandle;
+              let _out8;
+              let _out9;
+              let _outcollector2 = ConfluxRuntime_ConfluxWebSocketCapability.__default.ConnectWebSocket(url);
+              _out8 = _outcollector2[0];
+              _out9 = _outcollector2[1];
+              _12_reconnected = _out8;
+              _13_nextHandle = _out9;
+              conn = _13_nextHandle;
+              if (!(_12_reconnected)) {
+                errorText = _dafny.Seq.UnicodeFromString("reconnect failed after unsupported version");
+                return [ok, conn, resultText, notifications, errorText];
+              }
               _2_offered = _11_advertised;
               _3_id = (_3_id).plus(_dafny.ONE);
               break Lmatch0;
             }
           }
           {
-            let _12_error = (_source0).error;
-            let _out8;
-            _out8 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(_12_error);
-            errorText = _out8;
+            let _14_error = (_source0).error;
+            let _out10;
+            _out10 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(_14_error);
+            errorText = _out10;
             ConfluxRuntime_ConfluxWebSocketCapability.__default.CloseWebSocket(conn);
             return [ok, conn, resultText, notifications, errorText];
           }

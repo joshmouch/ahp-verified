@@ -2,15 +2,17 @@ const { WebSocketServer } = require('ws');
 
 const expectedInitial = ['0.8.0', '0.7.0', '0.6.0', '0.5.2', '0.5.1'];
 const server = new WebSocketServer({ host: '127.0.0.1', port: 49514 });
+const initializeAttempts = new Map();
 
 server.on('connection', (socket) => {
-  let initializeAttempts = 0;
   socket.on('message', (raw) => {
     const request = JSON.parse(String(raw));
     if (request.method === 'initialize') {
-      initializeAttempts += 1;
+      const clientId = request.params.clientId;
+      const attempt = (initializeAttempts.get(clientId) ?? 0) + 1;
+      initializeAttempts.set(clientId, attempt);
       const offered = request.params.protocolVersions;
-      if (initializeAttempts === 1) {
+      if (attempt === 1) {
         if (JSON.stringify(offered) !== JSON.stringify(expectedInitial)) process.exit(21);
         socket.send(JSON.stringify({
           jsonrpc: '2.0', id: request.id,
@@ -19,7 +21,7 @@ server.on('connection', (socket) => {
             message: 'unsupported protocol version',
             data: { supportedVersions: ['9.0.0'] },
           },
-        }));
+        }), () => socket.close());
         return;
       }
       if (JSON.stringify(offered) !== JSON.stringify(['9.0.0'])) process.exit(22);

@@ -1,7 +1,7 @@
 # @open-agency/ahp-client
 
 The sibling JavaScript package for the Dafny-verified Agent Host Protocol
-client. Its initial version offer, `-32005` recovery, JSON-RPC envelopes,
+client. Its initial version offer, reconnecting `-32005` recovery, JSON-RPC envelopes,
 response classification, ordered receive boundary, standard
 `dispatchAction` turn completion, and WebSocket connection lifecycle execute
 through extracted Dafny and the shared Conflux runtime. `AhpHostClient`
