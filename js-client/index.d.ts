@@ -20,7 +20,7 @@ export interface AhpAction {
   readonly channel: string;
   readonly serverSeq: number;
   readonly type: string;
-  readonly rawAction: Readonly<Record<string, unknown>>;
+  readonly rawAction?: Readonly<Record<string, unknown>>;
   readonly turnId?: string;
   readonly content?: string;
 }
