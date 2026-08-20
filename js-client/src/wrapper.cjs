@@ -73,7 +73,7 @@ class AhpHostClient {
     return JSON.parse(toJsString(resultText));
   }
 
-  async createChat(provider, cwd) {
+  async createChat(provider, cwd, options = {}) {
     try {
       return await this.request('chat/create', { provider, cwd });
     } catch (error) {
@@ -81,10 +81,24 @@ class AhpHostClient {
     }
 
     const sessionId = `ahp-session:/${randomUUID()}`;
+    const workingDirectory = pathToFileURL(cwd).href;
+    let config = options.config ?? {};
+    try {
+      const resolved = await this.request('resolveSessionConfig', {
+        channel: 'ahp-root://',
+        provider,
+        workingDirectory,
+        config,
+      });
+      config = { ...(resolved?.values ?? {}), ...config };
+    } catch (error) {
+      if (!(error instanceof AhpClientError) || error.code !== -32601) throw error;
+    }
     await this.request('createSession', {
       channel: sessionId,
       provider,
-      workingDirectories: [pathToFileURL(cwd).href],
+      workingDirectories: [workingDirectory],
+      ...(Object.keys(config).length > 0 ? { config } : {}),
     });
     const session = await this.request('subscribe', { channel: sessionId });
     const chatId = session?.snapshot?.state?.defaultChat;

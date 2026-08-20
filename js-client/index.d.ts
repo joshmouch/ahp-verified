@@ -12,6 +12,10 @@ export interface AhpChat {
   readonly transport?: 'dispatch-action';
 }
 
+export interface AhpCreateChatOptions {
+  readonly config?: Readonly<Record<string, unknown>>;
+}
+
 export interface AhpAction {
   readonly channel: string;
   readonly serverSeq: number;
@@ -39,7 +43,7 @@ export class AhpHostClient {
   get agents(): readonly string[];
   connect(timeoutMs?: number): Promise<void>;
   request(method: string, params?: unknown): Promise<unknown>;
-  createChat(provider: string, cwd: string): Promise<AhpChat>;
+  createChat(provider: string, cwd: string, options?: AhpCreateChatOptions): Promise<AhpChat>;
   prompt(chat: AhpChat, text: string, onAction?: (action: AhpAction) => void): Promise<AhpTurnResult>;
   cancel(chat: AhpChat): void;
   close(): void;

@@ -49,10 +49,25 @@ server.on('connection', (socket) => {
     if (request.method === 'createSession') {
       if (request.params.provider !== 'copilotcli'
           || request.params.channel.indexOf('ahp-session:/') !== 0
-          || JSON.stringify(request.params.workingDirectories) !== JSON.stringify(['file:///tmp'])) {
+          || JSON.stringify(request.params.workingDirectories) !== JSON.stringify(['file:///tmp'])
+          || request.params.config.isolation !== 'folder'
+          || request.params.config.mode !== 'interactive') {
         process.exit(23);
       }
       socket.send(JSON.stringify({ jsonrpc: '2.0', id: request.id, result: null }));
+      return;
+    }
+    if (request.method === 'resolveSessionConfig') {
+      if (request.params.channel !== 'ahp-root://'
+          || request.params.provider !== 'copilotcli'
+          || request.params.workingDirectory !== 'file:///tmp'
+          || request.params.config.isolation !== 'folder') {
+        process.exit(25);
+      }
+      socket.send(JSON.stringify({
+        jsonrpc: '2.0', id: request.id,
+        result: { schema: { type: 'object' }, values: { isolation: 'worktree', mode: 'interactive' } },
+      }));
       return;
     }
     if (request.method === 'subscribe') {

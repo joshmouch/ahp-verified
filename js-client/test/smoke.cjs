@@ -32,7 +32,11 @@ async function main() {
 
     const standard = new AhpHostClient({ url: 'ws://127.0.0.1:49514' }, 'standard-smoke');
     await standard.connect();
-    const standardChat = await standard.createChat('copilotcli', '/tmp');
+    const standardChat = await standard.createChat(
+      'copilotcli',
+      '/tmp',
+      { config: { isolation: 'folder' } },
+    );
     assert.equal(standardChat.transport, 'dispatch-action');
     assert.equal(standardChat.chatId, 'ahp-chat:/standard');
     const standardObserved = [];
