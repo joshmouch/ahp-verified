@@ -4,6 +4,7 @@ const { pathToFileURL } = require('node:url');
 const toDafnyString = (value) => _dafny.Seq.UnicodeFromString(String(value));
 const toDafnyStrings = (values) => _dafny.Seq.from(values, toDafnyString);
 const toJsString = (value) => value.toVerbatimString(false);
+const yieldToCaller = () => new Promise((resolve) => setImmediate(resolve));
 
 class AhpClientError extends Error {
   constructor(message, code, data) {
@@ -100,19 +101,55 @@ class AhpHostClient {
 
   async prompt(chat, text, onAction) {
     this.#requireConnection();
-    const [ok, next, resultText, _notifications, errorText] =
-      AhpConnectionRuntime.__default.Prompt(
+    const turnId = randomUUID();
+    const [ok, next, pending, view, resultText, _notifications, errorText] =
+      AhpConnectionRuntime.__default.BeginPrompt(
         this.#conn,
         this.#state,
         toDafnyString(JSON.stringify(chat)),
         toDafnyString(text),
-        toDafnyString(randomUUID()),
+        toDafnyString(turnId),
         toDafnyString(new Date().toISOString()),
       );
     this.#state = next;
     if (!ok) throw errorFromText(toJsString(errorText));
-    const result = JSON.parse(toJsString(resultText));
-    if (onAction) for (const action of result.actions) onAction(action);
+    let currentView = view;
+    let currentPending = pending;
+    let observed = 0;
+    let result;
+    const publish = (textResult) => {
+      result = JSON.parse(toJsString(textResult));
+      if (onAction) {
+        for (const action of result.actions.slice(observed)) onAction(action);
+      }
+      observed = result.actions.length;
+    };
+    if (!currentPending) {
+      publish(resultText);
+      return result;
+    }
+
+    // BeginPrompt has already recorded the active turn in the extracted state.
+    // Yield once before receiving so a caller can synchronously invoke cancel()
+    // against that exact state, then yield after every received frame.
+    await yieldToCaller();
+    while (currentPending) {
+      const [received, receivedState, stillPending, nextView, nextResult,
+        _receivedNotifications, receiveError] =
+        AhpConnectionRuntime.__default.ReceiveTurn(
+          this.#conn,
+          this.#state,
+          toDafnyString(JSON.stringify(chat)),
+          toDafnyString(turnId),
+          currentView,
+        );
+      this.#state = receivedState;
+      if (!received) throw errorFromText(toJsString(receiveError));
+      currentView = nextView;
+      currentPending = stillPending;
+      publish(nextResult);
+      if (currentPending) await yieldToCaller();
+    }
     return result;
   }
 

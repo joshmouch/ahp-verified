@@ -22,6 +22,10 @@ async function main() {
     const client = new AhpHostClient({ url: 'ws://127.0.0.1:49514' }, 'smoke');
     await client.connect();
     assert.deepEqual(client.agents, ['grok']);
+    await assert.rejects(
+      client.request('missing-method'),
+      (error) => error.code === -32601 && error.message === 'unknown method missing-method',
+    );
     const chat = await client.createChat('grok', '/tmp');
     const observed = [];
     const turn = await client.prompt(chat, 'hello', (action) => observed.push(action.type));
@@ -55,6 +59,25 @@ async function main() {
     assert.equal(standard.cancel(standardChat), true);
     standard.close();
 
+    const cancellable = new AhpHostClient({ url: 'ws://127.0.0.1:49514' }, 'cancel-smoke');
+    await cancellable.connect();
+    const cancellableChat = await cancellable.createChat(
+      'copilotcli',
+      '/tmp',
+      { config: { isolation: 'folder' } },
+    );
+    const cancelObserved = [];
+    const cancelledPromise = cancellable.prompt(
+      cancellableChat,
+      'cancel me',
+      (action) => cancelObserved.push(action.type),
+    );
+    assert.equal(cancellable.cancel(cancellableChat), true);
+    const cancelledTurn = await cancelledPromise;
+    assert.equal(cancelledTurn.outcome, 'chat/turnCancelled');
+    assert.deepEqual(cancelObserved, ['chat/turnCancelled']);
+    cancellable.close();
+
     const resumed = new AhpHostClient({ url: 'ws://127.0.0.1:49514' }, 'resume-smoke');
     await resumed.connect();
     await resumed.attachChat(standardChat);
@@ -62,11 +85,20 @@ async function main() {
     assert.equal(resumedTurn.text, 'VERIFIED-STANDARD-RESUME-OK');
     assert.equal(resumedTurn.outcome, 'chat/turnComplete');
     resumed.close();
+
+    const repeated = new AhpHostClient(
+      { url: 'ws://127.0.0.1:49514' },
+      'repeat-version',
+    );
+    await assert.rejects(
+      repeated.connect(),
+      /host repeated an unsupported version offer/,
+    );
   } finally {
     server.kill();
   }
 
-  console.log('SMOKE PASSED — extracted connect/request, both turn surfaces, ordered actions, cancel, resume, and reconnecting -32005 recovery');
+  console.log('SMOKE PASSED — extracted connect/request, both turn surfaces, ordered actions, live standard cancel, resume, and reconnecting -32005 recovery');
 }
 
 main().catch((error) => {

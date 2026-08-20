@@ -17146,18 +17146,21 @@ let ConfluxRuntime_ConfluxJsonRpc = (function() {
       return ConfluxRuntime_ConfluxJsonRpc.__default.SuccessEnvelope(id, ConfluxRuntime_ConfluxCodec.Json.create_JNull());
     };
     static Classify(j) {
-      let _0_id = ConfluxRuntime_ConfluxCodec.__default.Field(j, _dafny.Seq.UnicodeFromString("id"));
-      let _1_rpcMethod = ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(j, _dafny.Seq.UnicodeFromString("method")));
-      let _2_params = ConfluxRuntime_ConfluxCodec.__default.Field(j, _dafny.Seq.UnicodeFromString("params"));
-      let _3_error = ConfluxRuntime_ConfluxCodec.__default.Field(j, _dafny.Seq.UnicodeFromString("error"));
-      if ((!_dafny.areEqual(_1_rpcMethod, _dafny.Seq.UnicodeFromString(""))) && (!((_0_id).is_JNull))) {
-        return ConfluxRuntime_ConfluxJsonRpc.Message.create_Request(_0_id, _1_rpcMethod, _2_params);
-      } else if (!_dafny.areEqual(_1_rpcMethod, _dafny.Seq.UnicodeFromString(""))) {
-        return ConfluxRuntime_ConfluxJsonRpc.Message.create_Notification(_1_rpcMethod, _2_params);
-      } else if (!((_3_error).is_JNull)) {
-        return ConfluxRuntime_ConfluxJsonRpc.Message.create_Failure(_0_id, _3_error, ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(_3_error, _dafny.Seq.UnicodeFromString("message"))));
-      } else if (!((_0_id).is_JNull)) {
-        return ConfluxRuntime_ConfluxJsonRpc.Message.create_Success(_0_id, ConfluxRuntime_ConfluxCodec.__default.Field(j, _dafny.Seq.UnicodeFromString("result")));
+      let _0_version = ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(j, _dafny.Seq.UnicodeFromString("jsonrpc")));
+      let _1_id = ConfluxRuntime_ConfluxCodec.__default.Field(j, _dafny.Seq.UnicodeFromString("id"));
+      let _2_rpcMethod = ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(j, _dafny.Seq.UnicodeFromString("method")));
+      let _3_params = ConfluxRuntime_ConfluxCodec.__default.Field(j, _dafny.Seq.UnicodeFromString("params"));
+      let _4_error = ConfluxRuntime_ConfluxCodec.__default.Field(j, _dafny.Seq.UnicodeFromString("error"));
+      if (!_dafny.areEqual(_0_version, _dafny.Seq.UnicodeFromString("2.0"))) {
+        return ConfluxRuntime_ConfluxJsonRpc.Message.create_Invalid();
+      } else if ((!_dafny.areEqual(_2_rpcMethod, _dafny.Seq.UnicodeFromString(""))) && (!((_1_id).is_JNull))) {
+        return ConfluxRuntime_ConfluxJsonRpc.Message.create_Request(_1_id, _2_rpcMethod, _3_params);
+      } else if (!_dafny.areEqual(_2_rpcMethod, _dafny.Seq.UnicodeFromString(""))) {
+        return ConfluxRuntime_ConfluxJsonRpc.Message.create_Notification(_2_rpcMethod, _3_params);
+      } else if (!((_4_error).is_JNull)) {
+        return ConfluxRuntime_ConfluxJsonRpc.Message.create_Failure(_1_id, _4_error, ConfluxRuntime_ConfluxCodec.__default.AsStr(ConfluxRuntime_ConfluxCodec.__default.Field(_4_error, _dafny.Seq.UnicodeFromString("message"))));
+      } else if (!((_1_id).is_JNull)) {
+        return ConfluxRuntime_ConfluxJsonRpc.Message.create_Success(_1_id, ConfluxRuntime_ConfluxCodec.__default.Field(j, _dafny.Seq.UnicodeFromString("result")));
       } else {
         return ConfluxRuntime_ConfluxJsonRpc.Message.create_Invalid();
       }
@@ -33650,69 +33653,18 @@ let AhpConnectionRuntime = (function() {
       }
       return [ok, next, notifications, errorText];
     }
-    static DispatchTurn(conn, params, expectedChannel, expectedTurnId) {
-      let ok = false;
-      let view = AhpSessionClient.TurnView.Default();
-      let notifications = _dafny.Seq.of();
-      let errorText = _dafny.Seq.UnicodeFromString("");
-      ok = false;
-      view = AhpSessionClient.__default.EmptyTurn();
-      notifications = _dafny.Seq.of();
-      errorText = _dafny.Seq.UnicodeFromString("dispatchAction send failed");
-      let _0_notification;
-      _0_notification = ConfluxRuntime_ConfluxJsonRpc.__default.NotificationEnvelope(_dafny.Seq.UnicodeFromString("dispatchAction"), params);
-      let _1_text;
-      let _out0;
-      _out0 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(_0_notification);
-      _1_text = _out0;
-      let _2_sent;
-      let _out1;
-      _out1 = ConfluxRuntime_ConfluxWebSocketCapability.__default.SendWebSocketText(conn, _1_text);
-      _2_sent = _out1;
-      if (!(_2_sent)) {
-        return [ok, view, notifications, errorText];
-      }
-      while (!(AhpSessionClient.__default.IsTerminal(view))) {
-        let _3_open;
-        let _4_isText;
-        let _5_received;
-        let _out2;
-        let _out3;
-        let _out4;
-        let _outcollector0 = ConfluxRuntime_ConfluxWebSocketCapability.__default.ReceiveWebSocketText(conn);
-        _out2 = _outcollector0[0];
-        _out3 = _outcollector0[1];
-        _out4 = _outcollector0[2];
-        _3_open = _out2;
-        _4_isText = _out3;
-        _5_received = _out4;
-        if (!(_3_open)) {
-          errorText = _dafny.Seq.UnicodeFromString("connection closed during turn");
-          return [ok, view, notifications, errorText];
-        }
-        if (_4_isText) {
-          notifications = _dafny.Seq.Concat(notifications, _dafny.Seq.of(_5_received));
-          let _6_parsed;
-          let _out5;
-          _out5 = ConfluxRuntime_ConfluxJsonRpc.__default.Parse(_5_received);
-          _6_parsed = _out5;
-          if ((_6_parsed).is_Some) {
-            view = AhpSessionClient.__default.Observe(view, (_6_parsed).dtor_value, expectedChannel, expectedTurnId);
-          }
-        }
-      }
-      ok = true;
-      errorText = _dafny.Seq.UnicodeFromString("");
-      return [ok, view, notifications, errorText];
-    }
-    static Prompt(conn, state, chatText, promptText, turnId, startedAt) {
+    static BeginPrompt(conn, state, chatText, promptText, turnId, startedAt) {
       let ok = false;
       let next = AhpSessionClient.RuntimeState.Default();
+      let pending = false;
+      let view = AhpSessionClient.TurnView.Default();
       let resultText = _dafny.Seq.UnicodeFromString("");
       let notifications = _dafny.Seq.of();
       let errorText = _dafny.Seq.UnicodeFromString("");
       ok = false;
       next = state;
+      pending = false;
+      view = AhpSessionClient.__default.EmptyTurn();
       resultText = _dafny.Seq.UnicodeFromString("");
       notifications = _dafny.Seq.of();
       errorText = _dafny.Seq.UnicodeFromString("invalid chat");
@@ -33721,16 +33673,14 @@ let AhpConnectionRuntime = (function() {
       _out0 = ConfluxRuntime_ConfluxJsonText.__default.ParseJsonChecked(chatText);
       _0_parsed = _out0;
       if ((_0_parsed).is_Invalid) {
-        return [ok, next, resultText, notifications, errorText];
+        return [ok, next, pending, view, resultText, notifications, errorText];
       }
       let _1_chat;
       _1_chat = AhpSessionClient.__default.DecodeChat((_0_parsed).dtor_value);
-      let _2_view;
-      _2_view = AhpSessionClient.__default.EmptyTurn();
       if (((_1_chat).dtor_transport).is_Convenience) {
-        let _3_response = ConfluxRuntime_ConfluxJsonRpc.Message.Default();
-        let _4_received = _dafny.Seq.of();
-        let _5_callError = _dafny.Seq.UnicodeFromString("");
+        let _2_response = ConfluxRuntime_ConfluxJsonRpc.Message.Default();
+        let _3_received = _dafny.Seq.of();
+        let _4_callError = _dafny.Seq.UnicodeFromString("");
         let _out1;
         let _out2;
         let _out3;
@@ -33741,23 +33691,23 @@ let AhpConnectionRuntime = (function() {
         _out3 = _outcollector0[2];
         _out4 = _outcollector0[3];
         next = _out1;
-        _3_response = _out2;
-        _4_received = _out3;
-        _5_callError = _out4;
-        notifications = _dafny.Seq.Concat(notifications, _4_received);
-        if (!_dafny.areEqual(_5_callError, _dafny.Seq.UnicodeFromString(""))) {
-          errorText = _5_callError;
-          return [ok, next, resultText, notifications, errorText];
+        _2_response = _out2;
+        _3_received = _out3;
+        _4_callError = _out4;
+        notifications = _dafny.Seq.Concat(notifications, _3_received);
+        if (!_dafny.areEqual(_4_callError, _dafny.Seq.UnicodeFromString(""))) {
+          errorText = _4_callError;
+          return [ok, next, pending, view, resultText, notifications, errorText];
         }
-        let _source0 = _3_response;
+        let _source0 = _2_response;
         Lmatch0: {
           {
             if (_source0.is_Failure) {
-              let _6_error = (_source0).error;
+              let _5_error = (_source0).error;
               let _out5;
-              _out5 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(_6_error);
+              _out5 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(_5_error);
               errorText = _out5;
-              return [ok, next, resultText, notifications, errorText];
+              return [ok, next, pending, view, resultText, notifications, errorText];
               break Lmatch0;
             }
           }
@@ -33768,45 +33718,112 @@ let AhpConnectionRuntime = (function() {
           }
           {
             errorText = _dafny.Seq.UnicodeFromString("invalid chat/prompt response");
-            return [ok, next, resultText, notifications, errorText];
+            return [ok, next, pending, view, resultText, notifications, errorText];
           }
         }
         let _out6;
-        _out6 = AhpConnectionRuntime.__default.FoldNotifications(_4_received, (_1_chat).dtor_channel, _dafny.Seq.UnicodeFromString(""));
-        _2_view = _out6;
-      } else {
-        let _7_clientSeq;
-        _7_clientSeq = AhpSessionClient.__default.NextClientSeq(next, (_1_chat).dtor_channel);
-        next = AhpSessionClient.__default.StartTurn(next, (_1_chat).dtor_channel, turnId);
-        let _8_sentOk = false;
-        let _9_received = _dafny.Seq.of();
-        let _10_turnError = _dafny.Seq.UnicodeFromString("");
+        _out6 = AhpConnectionRuntime.__default.FoldNotifications(_3_received, (_1_chat).dtor_channel, _dafny.Seq.UnicodeFromString(""));
+        view = _out6;
         let _out7;
+        _out7 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(AhpSessionClient.__default.TurnResult((_1_chat).dtor_chatId, view));
+        resultText = _out7;
+        errorText = _dafny.Seq.UnicodeFromString("");
+        ok = true;
+        return [ok, next, pending, view, resultText, notifications, errorText];
+      } else {
+        let _6_clientSeq;
+        _6_clientSeq = AhpSessionClient.__default.NextClientSeq(next, (_1_chat).dtor_channel);
+        next = AhpSessionClient.__default.StartTurn(next, (_1_chat).dtor_channel, turnId);
+        let _7_params;
+        _7_params = AhpSessionClient.__default.DispatchParams((_1_chat).dtor_channel, _6_clientSeq, AhpSessionClient.__default.TurnStartedAction(turnId, startedAt, promptText));
+        let _8_notification;
+        _8_notification = ConfluxRuntime_ConfluxJsonRpc.__default.NotificationEnvelope(_dafny.Seq.UnicodeFromString("dispatchAction"), _7_params);
+        let _9_notificationText;
         let _out8;
+        _out8 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(_8_notification);
+        _9_notificationText = _out8;
+        let _10_sent;
         let _out9;
-        let _out10;
-        let _outcollector1 = AhpConnectionRuntime.__default.DispatchTurn(conn, AhpSessionClient.__default.DispatchParams((_1_chat).dtor_channel, _7_clientSeq, AhpSessionClient.__default.TurnStartedAction(turnId, startedAt, promptText)), (_1_chat).dtor_channel, turnId);
-        _out7 = _outcollector1[0];
-        _out8 = _outcollector1[1];
-        _out9 = _outcollector1[2];
-        _out10 = _outcollector1[3];
-        _8_sentOk = _out7;
-        _2_view = _out8;
-        _9_received = _out9;
-        _10_turnError = _out10;
-        notifications = _dafny.Seq.Concat(notifications, _9_received);
+        _out9 = ConfluxRuntime_ConfluxWebSocketCapability.__default.SendWebSocketText(conn, _9_notificationText);
+        _10_sent = _out9;
+        if (!(_10_sent)) {
+          next = AhpSessionClient.__default.FinishTurn(next, (_1_chat).dtor_channel);
+          errorText = _dafny.Seq.UnicodeFromString("dispatchAction send failed");
+          return [ok, next, pending, view, resultText, notifications, errorText];
+        }
+        pending = true;
+        errorText = _dafny.Seq.UnicodeFromString("");
+        ok = true;
+        return [ok, next, pending, view, resultText, notifications, errorText];
+      }
+      return [ok, next, pending, view, resultText, notifications, errorText];
+    }
+    static ReceiveTurn(conn, state, chatText, turnId, view) {
+      let ok = false;
+      let next = AhpSessionClient.RuntimeState.Default();
+      let pending = false;
+      let nextView = AhpSessionClient.TurnView.Default();
+      let resultText = _dafny.Seq.UnicodeFromString("");
+      let notifications = _dafny.Seq.of();
+      let errorText = _dafny.Seq.UnicodeFromString("");
+      ok = false;
+      next = state;
+      pending = false;
+      nextView = view;
+      resultText = _dafny.Seq.UnicodeFromString("");
+      notifications = _dafny.Seq.of();
+      errorText = _dafny.Seq.UnicodeFromString("invalid chat");
+      let _0_parsedChat;
+      let _out0;
+      _out0 = ConfluxRuntime_ConfluxJsonText.__default.ParseJsonChecked(chatText);
+      _0_parsedChat = _out0;
+      if ((_0_parsedChat).is_Invalid) {
+        return [ok, next, pending, nextView, resultText, notifications, errorText];
+      }
+      let _1_chat;
+      _1_chat = AhpSessionClient.__default.DecodeChat((_0_parsedChat).dtor_value);
+      if (((_1_chat).dtor_transport).is_Convenience) {
+        errorText = _dafny.Seq.UnicodeFromString("convenience turn is not pending");
+        return [ok, next, pending, nextView, resultText, notifications, errorText];
+      }
+      let _2_open;
+      let _3_isText;
+      let _4_received;
+      let _out1;
+      let _out2;
+      let _out3;
+      let _outcollector0 = ConfluxRuntime_ConfluxWebSocketCapability.__default.ReceiveWebSocketText(conn);
+      _out1 = _outcollector0[0];
+      _out2 = _outcollector0[1];
+      _out3 = _outcollector0[2];
+      _2_open = _out1;
+      _3_isText = _out2;
+      _4_received = _out3;
+      if (!(_2_open)) {
         next = AhpSessionClient.__default.FinishTurn(next, (_1_chat).dtor_channel);
-        if (!(_8_sentOk)) {
-          errorText = _10_turnError;
-          return [ok, next, resultText, notifications, errorText];
+        errorText = _dafny.Seq.UnicodeFromString("connection closed during turn");
+        return [ok, next, pending, nextView, resultText, notifications, errorText];
+      }
+      if (_3_isText) {
+        notifications = _dafny.Seq.of(_4_received);
+        let _5_parsed;
+        let _out4;
+        _out4 = ConfluxRuntime_ConfluxJsonRpc.__default.Parse(_4_received);
+        _5_parsed = _out4;
+        if ((_5_parsed).is_Some) {
+          nextView = AhpSessionClient.__default.Observe(view, (_5_parsed).dtor_value, (_1_chat).dtor_channel, turnId);
         }
       }
-      let _out11;
-      _out11 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(AhpSessionClient.__default.TurnResult((_1_chat).dtor_chatId, _2_view));
-      resultText = _out11;
+      pending = !(AhpSessionClient.__default.IsTerminal(nextView));
+      if (!(pending)) {
+        next = AhpSessionClient.__default.FinishTurn(next, (_1_chat).dtor_channel);
+      }
+      let _out5;
+      _out5 = ConfluxRuntime_ConfluxJsonRpc.__default.Stringify(AhpSessionClient.__default.TurnResult((_1_chat).dtor_chatId, nextView));
+      resultText = _out5;
       errorText = _dafny.Seq.UnicodeFromString("");
       ok = true;
-      return [ok, next, resultText, notifications, errorText];
+      return [ok, next, pending, nextView, resultText, notifications, errorText];
     }
     static Cancel(conn, state, chatText) {
       let ok = false;
@@ -33916,6 +33933,7 @@ const { pathToFileURL } = require('node:url');
 const toDafnyString = (value) => _dafny.Seq.UnicodeFromString(String(value));
 const toDafnyStrings = (values) => _dafny.Seq.from(values, toDafnyString);
 const toJsString = (value) => value.toVerbatimString(false);
+const yieldToCaller = () => new Promise((resolve) => setImmediate(resolve));
 
 class AhpClientError extends Error {
   constructor(message, code, data) {
@@ -34012,19 +34030,55 @@ class AhpHostClient {
 
   async prompt(chat, text, onAction) {
     this.#requireConnection();
-    const [ok, next, resultText, _notifications, errorText] =
-      AhpConnectionRuntime.__default.Prompt(
+    const turnId = randomUUID();
+    const [ok, next, pending, view, resultText, _notifications, errorText] =
+      AhpConnectionRuntime.__default.BeginPrompt(
         this.#conn,
         this.#state,
         toDafnyString(JSON.stringify(chat)),
         toDafnyString(text),
-        toDafnyString(randomUUID()),
+        toDafnyString(turnId),
         toDafnyString(new Date().toISOString()),
       );
     this.#state = next;
     if (!ok) throw errorFromText(toJsString(errorText));
-    const result = JSON.parse(toJsString(resultText));
-    if (onAction) for (const action of result.actions) onAction(action);
+    let currentView = view;
+    let currentPending = pending;
+    let observed = 0;
+    let result;
+    const publish = (textResult) => {
+      result = JSON.parse(toJsString(textResult));
+      if (onAction) {
+        for (const action of result.actions.slice(observed)) onAction(action);
+      }
+      observed = result.actions.length;
+    };
+    if (!currentPending) {
+      publish(resultText);
+      return result;
+    }
+
+    // BeginPrompt has already recorded the active turn in the extracted state.
+    // Yield once before receiving so a caller can synchronously invoke cancel()
+    // against that exact state, then yield after every received frame.
+    await yieldToCaller();
+    while (currentPending) {
+      const [received, receivedState, stillPending, nextView, nextResult,
+        _receivedNotifications, receiveError] =
+        AhpConnectionRuntime.__default.ReceiveTurn(
+          this.#conn,
+          this.#state,
+          toDafnyString(JSON.stringify(chat)),
+          toDafnyString(turnId),
+          currentView,
+        );
+      this.#state = receivedState;
+      if (!received) throw errorFromText(toJsString(receiveError));
+      currentView = nextView;
+      currentPending = stillPending;
+      publish(nextResult);
+      if (currentPending) await yieldToCaller();
+    }
     return result;
   }
 

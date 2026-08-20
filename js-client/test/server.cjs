@@ -5,6 +5,8 @@ const server = new WebSocketServer({ host: '127.0.0.1', port: 49514 });
 const initializeAttempts = new Map();
 
 server.on('connection', (socket) => {
+  let cancellableTurnId;
+  const subscriptions = [];
   socket.on('message', (raw) => {
     const request = JSON.parse(String(raw));
     if (request.method === 'initialize') {
@@ -12,6 +14,17 @@ server.on('connection', (socket) => {
       const attempt = (initializeAttempts.get(clientId) ?? 0) + 1;
       initializeAttempts.set(clientId, attempt);
       const offered = request.params.protocolVersions;
+      if (clientId.startsWith('repeat-version#')) {
+        socket.send(JSON.stringify({
+          jsonrpc: '2.0', id: request.id,
+          error: {
+            code: -32005,
+            message: 'unsupported protocol version',
+            data: { supportedVersions: ['9.0.0'] },
+          },
+        }), () => socket.close());
+        return;
+      }
       if (attempt === 1) {
         if (JSON.stringify(offered) !== JSON.stringify(expectedInitial)) process.exit(21);
         socket.send(JSON.stringify({
@@ -74,6 +87,7 @@ server.on('connection', (socket) => {
     }
     if (request.method === 'subscribe') {
       const channel = request.params.channel;
+      subscriptions.push(channel);
       const state = channel.indexOf('ahp-session:/') === 0
         ? { defaultChat: 'ahp-chat:/standard' }
         : { status: 'idle' };
@@ -85,6 +99,20 @@ server.on('connection', (socket) => {
     }
     if (request.method === 'dispatchAction') {
       const action = request.params.action;
+      if (action.type === 'chat/turnCancelled') {
+        if (request.id !== undefined
+            || request.params.channel !== 'ahp-chat:/standard'
+            || request.params.clientSeq !== 2
+            || action.turnId !== cancellableTurnId) {
+          process.exit(27);
+        }
+        socket.send(JSON.stringify({
+          jsonrpc: '2.0', method: 'action',
+          params: { channel: request.params.channel, serverSeq: 1,
+            action: { type: 'chat/turnCancelled', turnId: action.turnId } },
+        }));
+        return;
+      }
       const response = action.message.text === 'resumed hello'
         ? 'VERIFIED-STANDARD-RESUME-OK'
         : 'VERIFIED-STANDARD-AHP-OK';
@@ -92,9 +120,16 @@ server.on('connection', (socket) => {
           || request.params.channel !== 'ahp-chat:/standard'
           || request.params.clientSeq !== 1
           || action.type !== 'chat/turnStarted'
-          || !['standard hello', 'resumed hello'].includes(action.message.text)
-          || action.message.origin.kind !== 'user') {
+          || !['standard hello', 'resumed hello', 'cancel me'].includes(action.message.text)
+          || action.message.origin.kind !== 'user'
+          || subscriptions.length < 2
+          || !subscriptions.at(-2).startsWith('ahp-session:/')
+          || subscriptions.at(-1) !== 'ahp-chat:/standard') {
         process.exit(24);
+      }
+      if (action.message.text === 'cancel me') {
+        cancellableTurnId = action.turnId;
+        return;
       }
       socket.send(JSON.stringify({
         jsonrpc: '2.0', method: 'action',
