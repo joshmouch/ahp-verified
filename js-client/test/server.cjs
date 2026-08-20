@@ -85,18 +85,21 @@ server.on('connection', (socket) => {
     }
     if (request.method === 'dispatchAction') {
       const action = request.params.action;
+      const response = action.message.text === 'resumed hello'
+        ? 'VERIFIED-STANDARD-RESUME-OK'
+        : 'VERIFIED-STANDARD-AHP-OK';
       if (request.id !== undefined
           || request.params.channel !== 'ahp-chat:/standard'
           || request.params.clientSeq !== 1
           || action.type !== 'chat/turnStarted'
-          || action.message.text !== 'standard hello'
+          || !['standard hello', 'resumed hello'].includes(action.message.text)
           || action.message.origin.kind !== 'user') {
         process.exit(24);
       }
       socket.send(JSON.stringify({
         jsonrpc: '2.0', method: 'action',
         params: { channel: request.params.channel, serverSeq: 1,
-          action: { type: 'chat/delta', turnId: action.turnId, content: 'VERIFIED-STANDARD-AHP-OK' } },
+          action: { type: 'chat/delta', turnId: action.turnId, content: response } },
       }));
       socket.send(JSON.stringify({
         jsonrpc: '2.0', method: 'action',

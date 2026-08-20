@@ -44,6 +44,7 @@ export class AhpHostClient {
   connect(timeoutMs?: number): Promise<void>;
   request(method: string, params?: unknown): Promise<unknown>;
   createChat(provider: string, cwd: string, options?: AhpCreateChatOptions): Promise<AhpChat>;
+  attachChat(chat: AhpChat): Promise<AhpChat>;
   prompt(chat: AhpChat, text: string, onAction?: (action: AhpAction) => void): Promise<AhpTurnResult>;
   cancel(chat: AhpChat): void;
   close(): void;

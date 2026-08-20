@@ -18,4 +18,5 @@ await client.connect();
 consumers do not need Dafny or the unpublished Conflux proof package.
 Standard sessions resolve the host's current configuration schema before
 creation; callers can override resolved defaults with the optional third
-`createChat` argument.
+`createChat` argument. `attachChat` re-subscribes the standard session and chat
+when a persisted chat is resumed on a new connection.

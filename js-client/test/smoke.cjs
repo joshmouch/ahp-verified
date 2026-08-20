@@ -50,11 +50,19 @@ async function main() {
     assert.deepEqual(standardObserved, ['chat/delta', 'chat/turnComplete']);
     assert.equal(standardTurn.actions[0].rawAction.content, 'VERIFIED-STANDARD-AHP-OK');
     standard.close();
+
+    const resumed = new AhpHostClient({ url: 'ws://127.0.0.1:49514' }, 'resume-smoke');
+    await resumed.connect();
+    await resumed.attachChat(standardChat);
+    const resumedTurn = await resumed.prompt(standardChat, 'resumed hello');
+    assert.equal(resumedTurn.text, 'VERIFIED-STANDARD-RESUME-OK');
+    assert.equal(resumedTurn.outcome, 'chat/turnComplete');
+    resumed.close();
   } finally {
     server.kill();
   }
 
-  console.log('SMOKE PASSED — extracted connect/request, both turn surfaces, and reconnecting -32005 recovery');
+  console.log('SMOKE PASSED — extracted connect/request, both turn surfaces, resume, and reconnecting -32005 recovery');
 }
 
 main().catch((error) => {

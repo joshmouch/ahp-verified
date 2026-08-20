@@ -33100,6 +33100,14 @@ class AhpHostClient {
     return { sessionId, chatId, agentId: provider, channel: chatId, transport: 'dispatch-action' };
   }
 
+  async attachChat(chat) {
+    if (chat.transport === 'dispatch-action') {
+      await this.request('subscribe', { channel: chat.sessionId });
+      await this.request('subscribe', { channel: chat.channel });
+    }
+    return chat;
+  }
+
   async prompt(chat, text, onAction) {
     const before = this.#actions.length;
     if (onAction) this.#observers.set(chat.channel, onAction);
